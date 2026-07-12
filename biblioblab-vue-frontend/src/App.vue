@@ -1,11 +1,13 @@
-<script setup></script>
+<script setup>
+import ContatoreVue from './components/ContatoreVue.vue';
+import ListaSpesa from './components/ListaSpesa.vue';
+
+
+</script>
 
 <template>
-  <h1>You did it!</h1>
-  <p>
-    Visit <a href="https://vuejs.org/" target="_blank" rel="noopener">vuejs.org</a> to read the
-    documentation
-  </p>
+  <ContatoreVue/>
+  <ListaSpesa />
 </template>
 
 <style scoped></style>
