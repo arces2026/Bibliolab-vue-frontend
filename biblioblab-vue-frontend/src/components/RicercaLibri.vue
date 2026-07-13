@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import LoadingSpinner from './LoadingSpinner.vue'
+
 const libri = ref([
   {
     id: 1,
@@ -52,18 +53,36 @@ const libri = ref([
   },
 ])
 
+const libriApi = ref([])
+
 const filtro = ref('')
 const genereSelezionato = ref('Tutti')
 const soloDisponibili = ref(false)
 const loading = ref(false)
 
 let timeout = null
-watch(filtro,(nuovoFiltro, vecchioFiltro) => {
+watch(filtro,(newFiltro, oldFiltro) => {
   clearTimeout(timeout)
   if (filtro.value.length < 3) return
   loading.value = true
-  timeout = setTimeout(() => {
-    console.log({vecchioFiltro: vecchioFiltro, nuovoFiltro: nuovoFiltro})
+  timeout = setTimeout(async() => {
+    try {
+    const res = await fetch(`http://localhost:8000/api/libri/`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    if (!res.ok) {
+      throw new Error('Error in setTimeout fetch', Error.message)
+    }
+    libriApi.value = await res.json()
+    console.log({libriApi: libriApi.value})
+  } catch(err) {
+    console.error('Error while fetching libri', err)
+  } finally {
+    console.log({newFiltro: newFiltro, oldFiltro: oldFiltro})
+  }
     loading.value = false
   }, 3000)
 
