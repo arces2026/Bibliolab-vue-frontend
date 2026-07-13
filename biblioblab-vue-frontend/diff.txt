@@ -1,0 +1,288 @@
+diff --git a/biblioblab-vue-frontend/diff.txt b/biblioblab-vue-frontend/diff.txt
+new file mode 100644
+index 0000000..63717ed
+--- /dev/null
++++ b/biblioblab-vue-frontend/diff.txt
+@@ -0,0 +1,122 @@
++diff --git a/biblioblab-vue-frontend/src/App.vue b/biblioblab-vue-frontend/src/App.vue
++index 6a050aa..4486647 100644
++--- a/biblioblab-vue-frontend/src/App.vue
+++++ b/biblioblab-vue-frontend/src/App.vue
++@@ -1,13 +1,15 @@
++ <script setup>
++ import ContatoreVue from './components/ContatoreVue.vue';
++ import ListaSpesa from './components/ListaSpesa.vue';
+++import SchedaLibro from './components/SchedaLibro.vue';
++ 
++ 
++ </script>
++ 
++ <template>
++-  <ContatoreVue/>
++-  <ListaSpesa />
+++  <!-- <ContatoreVue/>
+++  <ListaSpesa /> -->
+++  <SchedaLibro />
++ </template>
++ 
++ <style scoped></style>
++diff --git a/biblioblab-vue-frontend/src/components/SchedaLibro.vue b/biblioblab-vue-frontend/src/components/SchedaLibro.vue
++new file mode 100644
++index 0000000..2068488
++--- /dev/null
+++++ b/biblioblab-vue-frontend/src/components/SchedaLibro.vue
++@@ -0,0 +1,94 @@
+++<script setup>
+++import { computed, reactive } from 'vue';
+++
+++const libro = reactive({
+++  titolo: '',
+++  autore: '',
+++  isbn: '',
+++  anno: null,
+++  genere: 'narrativa',
+++  disponibile: true,
+++  descrizione: ''
+++})
+++
+++const formValido = computed(() =>
+++  libro.titolo.trim() !== '' && libro.autore.trim() !== ''
+++)
+++
+++const salva = () => {
+++  console.log('Libro salvato correttamente', libro)
+++  alert('Libro salvato correttamente')
+++  setTimeout(() => {
+++  for (const key in libro){
+++     libro[key] = ''
+++  }
+++  }, 4000)
+++}
+++</script>
+++
+++<template>
+++  <h2>Scheda libro</h2>
+++  <form action="" @submit.prevent="salva" class="form">
+++    <input type="text" v-model="libro.titolo" placeholder="titolo" required>
+++    <input type="text" v-model="libro.autore" placeholder="autore" required>
+++    <input type="text" v-model="libro.isbn" placeholder="isbn">
+++    <input type="number" v-model="libro.anno" placeholder="anno">
+++    <select name="" id="">
+++      <option value="narrativa" selected>Narrativa</option>
+++      <option value="romanzo" >Romanzo</option>
+++      <option value="storico" >Storico</option>
+++      <option value="novella" >Novella</option>
+++      <option value="tecnico" >Tecnico</option>
+++    </select>
+++    <label for="disponibile">Disponibile</label>
+++    <input type="checkbox" v-model="libro.disponibile" id="disponibile">
+++    <textarea name="" id="" v-model="libro.descrizione"></textarea>
+++    <button :disabled="!formValido">Salva</button>
+++  </form>
+++</template>
+++
+++<style scoped>
+++* {
+++  box-sizing: border-box;
+++}
+++h2 {
+++  text-align: center;
+++}
+++.form {
+++  display: flex;
+++  flex-direction: column;
+++  gap: 10px;
+++  width: 400px;
+++  align-items: center;
+++  justify-content: center;
+++  margin: 10px auto;
+++}
+++input, select, textarea {
+++  width: 100%;
+++  padding: 4px;
+++  border-radius: 4px;
+++}
+++input[type='checkbox'], select {
+++  cursor: pointer;
+++}
+++textarea {
+++  height: 150px;
+++}
+++button {
+++  padding: 15px 30px;
+++  border-radius: 4px;
+++  background-color: green;
+++  color: white;
+++  cursor: pointer;
+++  transition: scale 0.3s ease-in-out;
+++}
+++button:hover {
+++  scale: 1.05;
+++  background-color: rgb(33, 180, 33);
+++}
+++button:disabled {
+++  background-color: gray;
+++  scale: 0.95;
+++  cursor: not-allowed;
+++}
+++</style>
+diff --git a/biblioblab-vue-frontend/src/App.vue b/biblioblab-vue-frontend/src/App.vue
+index 4486647..512f80a 100644
+--- a/biblioblab-vue-frontend/src/App.vue
++++ b/biblioblab-vue-frontend/src/App.vue
+@@ -1,6 +1,7 @@
+ <script setup>
+ import ContatoreVue from './components/ContatoreVue.vue';
+ import ListaSpesa from './components/ListaSpesa.vue';
++import RicercaLibri from './components/RicercaLibri.vue';
+ import SchedaLibro from './components/SchedaLibro.vue';
+ 
+ 
+@@ -10,6 +11,7 @@ import SchedaLibro from './components/SchedaLibro.vue';
+   <!-- <ContatoreVue/>
+   <ListaSpesa /> -->
+   <SchedaLibro />
++  <RicercaLibri />
+ </template>
+ 
+ <style scoped></style>
+diff --git a/biblioblab-vue-frontend/src/components/RicercaLibri.vue b/biblioblab-vue-frontend/src/components/RicercaLibri.vue
+new file mode 100644
+index 0000000..2b09838
+--- /dev/null
++++ b/biblioblab-vue-frontend/src/components/RicercaLibri.vue
+@@ -0,0 +1,134 @@
++<script setup>
++import { ref, computed } from 'vue'
++const libri = ref([
++  {
++    id: 1,
++    titolo: 'Il Nome della Rosa',
++    autore: 'Umberto Eco',
++    anno: 1980,
++    genere: 'Giallo storico',
++    disponibile: true,
++  },
++  {
++    id: 2,
++    titolo: '1984',
++    autore: 'George Orwell',
++    anno: 1949,
++    genere: 'Fantascienza distopica',
++    disponibile: false,
++  },
++  {
++    id: 3,
++    titolo: 'Il Signore degli Anelli',
++    autore: 'J.R.R. Tolkien',
++    anno: 1954,
++    genere: 'Fantasy',
++    disponibile: true,
++  },
++  {
++    id: 4,
++    titolo: 'Orgoglio e Pregiudizio',
++    autore: 'Jane Austen',
++    anno: 1813,
++    genere: 'Romanzo rosa',
++    disponibile: true,
++  },
++  {
++    id: 5,
++    titolo: 'Il Giovane Holden',
++    autore: 'J.D. Salinger',
++    anno: 1951,
++    genere: 'Romanzo di formazione',
++    disponibile: false,
++  },
++  {
++    id: 6,
++    titolo: "Cent'anni di Solitudine",
++    autore: 'Gabriel García Márquez',
++    anno: 1967,
++    genere: 'Realismo magico',
++    disponibile: true,
++  },
++])
++
++const filtro = ref('')
++const genereSelezionato = ref('Tutti')
++const soloDisponibili = ref(false)
++
++const libriFiltrati = computed(() => {
++  let result = libri.value
++  if (soloDisponibili.value) {
++    result = libri.value.filter((l) => l.disponibile)
++  }
++  if (genereSelezionato.value !== 'Tutti') {
++    result = result.filter((l) => l.genere === genereSelezionato.value)
++  }
++
++  if (!filtro.value) return result
++  return result.filter(
++    (l) =>
++      l.titolo.toLowerCase().includes(filtro.value) ||
++      l.autore.toLowerCase().includes(filtro.value),
++  )
++})
++</script>
++<template>
++  <h2>Ricerca libri</h2>
++  <!-- <h2>Catalogo</h2>
++  <ul>
++    <li v-for="libro in libri" :key="libro.id">
++      {{ libro.titolo }} di {{ libro.autore }} - genere: {{ libro.genere }} ({{ libro.anno }})
++    </li>
++  </ul> -->
++  <h3>Ricerca per genere, disponibilità, titolo o autore</h3>
++  <div class="container">
++    <input type="text" v-model="filtro" placeholder="Inserisci testo..." />
++    <div class="label">
++      <label for="disponibile">Solo disponibili</label>
++
++      <input id="disponibile" type="checkbox" v-model="soloDisponibili" />
++    </div>
++    <select v-model="genereSelezionato">
++      <option selected>Tutti</option>
++      <option v-for="libro in libri" :key="libro.id">{{ libro.genere }}</option>
++    </select>
++    <ul>
++      <li v-for="libro in libriFiltrati" :key="libro.id">
++        {{ libro.titolo }} di {{ libro.autore }} ({{ libro.anno }})
++      </li>
++    </ul>
++
++    <h3>{{ libriFiltrati.length }} libri trovati su {{ libri.length }}</h3>
++  </div>
++</template>
++
++<style scoped>
++* {
++  box-sizing: border-box;
++  margin: 0;
++  padding: 0;
++}
++h2 {
++  text-align: center;
++  margin: 60px auto 30px;
++}
++h3 {
++  text-align: center;
++  margin-bottom: 15px;
++}
++.container {
++  display: flex;
++  flex-direction: column;
++  align-items: center;
++  gap: 20px;
++}
++input, select {
++  padding: 5px;
++  border-radius: 5px;
++}
++.label {
++  display: flex;
++  justify-content: space-between;
++  width: 130px;
++}
++</style>
