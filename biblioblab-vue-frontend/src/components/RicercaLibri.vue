@@ -1,5 +1,6 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
+import LoadingSpinner from './LoadingSpinner.vue'
 const libri = ref([
   {
     id: 1,
@@ -54,6 +55,19 @@ const libri = ref([
 const filtro = ref('')
 const genereSelezionato = ref('Tutti')
 const soloDisponibili = ref(false)
+const loading = ref(false)
+
+let timeout = null
+watch(filtro,(nuovoFiltro, vecchioFiltro) => {
+  clearTimeout(timeout)
+  if (filtro.value.length < 3) return
+  loading.value = true
+  timeout = setTimeout(() => {
+    console.log({vecchioFiltro: vecchioFiltro, nuovoFiltro: nuovoFiltro})
+    loading.value = false
+  }, 3000)
+
+})
 
 const libriFiltrati = computed(() => {
   let result = libri.value
@@ -80,6 +94,7 @@ const libriFiltrati = computed(() => {
       {{ libro.titolo }} di {{ libro.autore }} - genere: {{ libro.genere }} ({{ libro.anno }})
     </li>
   </ul> -->
+  <LoadingSpinner v-if="loading"/>
   <h3>Ricerca per genere, disponibilità, titolo o autore</h3>
   <div class="container">
     <input type="text" v-model="filtro" placeholder="Inserisci testo..." />
