@@ -1,8 +1,7 @@
 <script setup>
-import ContatoreVue from './components/ContatoreVue.vue';
-import ListaSpesa from './components/ListaSpesa.vue';
 import RicercaLibri from './components/RicercaLibri.vue';
 import SchedaLibro from './components/SchedaLibro.vue';
+import CatalogoView from './view/CatalogoView.vue';
 
 
 </script>
@@ -10,6 +9,7 @@ import SchedaLibro from './components/SchedaLibro.vue';
 <template>
   <!-- <ContatoreVue/>
   <ListaSpesa /> -->
+  <CatalogoView />
   <SchedaLibro />
   <RicercaLibri />
 </template>

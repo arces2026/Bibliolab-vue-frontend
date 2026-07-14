@@ -84,7 +84,7 @@ watch(filtro,(newFiltro, oldFiltro) => {
     console.log({newFiltro: newFiltro, oldFiltro: oldFiltro})
   }
     loading.value = false
-  }, 3000)
+  }, 300)
 
 })
 
