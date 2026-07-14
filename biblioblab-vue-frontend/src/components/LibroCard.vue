@@ -105,7 +105,7 @@ img {
   width: 100%;
   max-height: 200px;
   object-fit: cover;
-  border-radius: 10px;
+  border-radius: 2px 5px 5px 2px ;
   /* border: 1px solid blue; */
   box-shadow: 1px 1px 24px gray;
 }

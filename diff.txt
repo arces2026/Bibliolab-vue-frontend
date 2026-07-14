@@ -1,0 +1,635 @@
+diff --git a/biblioblab-vue-frontend/diff.txt b/biblioblab-vue-frontend/diff.txt
+index 77414f4..8650fd0 100644
+--- a/biblioblab-vue-frontend/diff.txt
++++ b/biblioblab-vue-frontend/diff.txt
+@@ -1,92 +1,343 @@
++diff --git a/biblioblab-vue-frontend/src/App.vue b/biblioblab-vue-frontend/src/App.vue
++index 512f80a..7c9522d 100644
++--- a/biblioblab-vue-frontend/src/App.vue
+++++ b/biblioblab-vue-frontend/src/App.vue
++@@ -1,8 +1,7 @@
++ <script setup>
++-import ContatoreVue from './components/ContatoreVue.vue';
++-import ListaSpesa from './components/ListaSpesa.vue';
++ import RicercaLibri from './components/RicercaLibri.vue';
++ import SchedaLibro from './components/SchedaLibro.vue';
+++import CatalogoView from './view/CatalogoView.vue';
++ 
++ 
++ </script>
++@@ -10,6 +9,7 @@ import SchedaLibro from './components/SchedaLibro.vue';
++ <template>
++   <!-- <ContatoreVue/>
++   <ListaSpesa /> -->
+++  <CatalogoView />
++   <SchedaLibro />
++   <RicercaLibri />
++ </template>
++diff --git a/biblioblab-vue-frontend/src/assets/libro_default.png b/biblioblab-vue-frontend/src/assets/libro_default.png
++new file mode 100644
++index 0000000..56ddad3
++Binary files /dev/null and b/biblioblab-vue-frontend/src/assets/libro_default.png differ
++diff --git a/biblioblab-vue-frontend/src/components/ContatoreVue.vue b/biblioblab-vue-frontend/src/components/ContatoreVue.vue
++deleted file mode 100644
++index cb9bfaf..0000000
++--- a/biblioblab-vue-frontend/src/components/ContatoreVue.vue
+++++ /dev/null
++@@ -1,22 +0,0 @@
++-<template>
++-  <h1 :class="{'rosso':count <= 0, 'verde': count > 5}">Contatore: {{ count }}</h1>
++-  <button @click="count++"> + </button>
++-  <button @click="count--" :disabled="count <= 0"> - </button>
++-  <button @click="count = 0">Reset</button>
++-</template>
++-
++-<script setup>
++-import { ref } from 'vue'
++-
++-const count = ref(0)
++-</script>
++-
++-<style scoped>
++-.rosso {
++-  color: red;
++-}
++-
++-.verde {
++-  color: green;
++-}
++-</style>
+ diff --git a/biblioblab-vue-frontend/src/components/ItemCard.vue b/biblioblab-vue-frontend/src/components/ItemCard.vue
++deleted file mode 100644
++index 8ff704f..0000000
++--- a/biblioblab-vue-frontend/src/components/ItemCard.vue
+++++ /dev/null
++@@ -1,16 +0,0 @@
++-<template>
++-  <div class="container">
++-  <slot name="header"></slot>
++-  <slot name="content"></slot>
++-  <slot name="footer"></slot>
++-  </div>
++-</template>
++-
++-<style scoped>
++-.container {
++-  width: 20vw;
++-  height: 40vh;
++-  border: 1px solid rgb(204, 200, 200);
++-  border-radius: 10px;
++-}
++-</style>
++diff --git a/biblioblab-vue-frontend/src/components/LibroCard.vue b/biblioblab-vue-frontend/src/components/LibroCard.vue
+ new file mode 100644
+-index 0000000..8ff704f
++index 0000000..aa60ea3
+ --- /dev/null
+-+++ b/biblioblab-vue-frontend/src/components/ItemCard.vue
+-@@ -0,0 +1,16 @@
+++++ b/biblioblab-vue-frontend/src/components/LibroCard.vue
++@@ -0,0 +1,114 @@
+ +<template>
+ +  <div class="container">
+-+  <slot name="header"></slot>
+-+  <slot name="content"></slot>
+-+  <slot name="footer"></slot>
+++    <section class="cover">
+++      <img :src="copertina" :alt="titolo" />
+++    </section>
+++
+++    <section class="content">
+++      <h3>{{ titolo }}title</h3>
+++      <p><strong>Autore</strong>: {{ autore.nome }} {{ autore.cognome }}</p>
+++    </section>
+++
+++    <section class="description">
+++      <p><strong>Descrizione</strong>: {{ descrizione.slice(0, 200) }}...</p>
+++    </section>
+++    <section class="anno">
+++      <span><strong>anno</strong>: {{ anno }}</span
+++      ><span :class="disponibile ? 'green' : 'red'">{{
+++        disponibile ? 'disponibile' : 'non disponibile'
+++      }}</span>
+++    </section>
+++
+++    <section class="footer">
+++      <span>isbn: {{ isbn }} </span>
+++    </section>
+ +  </div>
+ +</template>
+ +
+++<script setup>
+++import defaultCover from '@/assets/libro_default.png'
+++
+++defineProps({
+++  titolo: String,
+++  autore: {
+++    type: Object,
+++    required: true,
+++  },
+++  isbn: {
+++    type: String,
+++    default: '000-0-0000-0000-0',
+++  },
+++  anno: Number,
+++  genere: String,
+++  disponibile: {
+++    type: Boolean,
+++    default: true,
+++  },
+++  copertina: {
+++    type: String,
+++    default: defaultCover,
+++  },
+++  descrizione: {
+++    type: String,
+++    default: `Lorem ipsum dolor sit amet,
+++     ameconsectetur adipiscing elit, sed do eiusmod tempor
+++     incididunt ut labore et dolore magna aliqua. Ut enim ad
+++     minim veniam, quis nostrud exercitation ullamco laboris nisi
+++     ut aliquip ex ea commodo consequat. Duis aute irure dolor in
+++     .`,
+++  },
+++})
+++</script>
+++
+ +<style scoped>
+++* {
+++  box-sizing: border-box;
+++  margin: 0;
+++  padding: 0;
+++  /* border: 1px solid; */
+++}
+++
+ +.container {
+-+  width: 20vw;
+-+  height: 40vh;
+-+  border: 1px solid rgb(204, 200, 200);
+-+  border-radius: 10px;
+++  width: 40vw;
+++  min-width: 200px;
+++  display: grid;
+++  grid-template-columns: repeat(2, 1fr);
+++  grid-template-rows: 1fr, 2fr, 1fr, 1fr;
+++  gap: 8px;
+++  transition: scale 0.3s ease;
+++}
+++.container:hover {
+++  scale: 1.1;
+++}
+++
+++.cover {
+++  grid-row: span 4 / span 4;
+++}
+++img {
+++  width: 100%;
+++  object-fit: contain;
+++}
+++.content {
+++  grid-column-start: 2;
+++  grid-row-start: 1;
+++}
+++.description {
+++  grid-column-start: 2;
+++  grid-row-start: 2;
+++}
+++.green {
+++  color: green;
+++}
+++.red {
+++  color: red;
+++}
+++.anno {
+++  grid-column-start: 2;
+++  grid-row-start: 3;
+++}
+++
+++.footer {
+++  grid-column-start: 2;
+++  grid-row-start: 4;
+ +}
+ +</style>
+-diff --git a/biblioblab-vue-frontend/src/components/LoadingSpinner.vue b/biblioblab-vue-frontend/src/components/LoadingSpinner.vue
++diff --git a/biblioblab-vue-frontend/src/components/ListaSpesa.vue b/biblioblab-vue-frontend/src/components/ListaSpesa.vue
++deleted file mode 100644
++index 4e84106..0000000
++--- a/biblioblab-vue-frontend/src/components/ListaSpesa.vue
+++++ /dev/null
++@@ -1,75 +0,0 @@
++-<script setup>
++-import { ref } from 'vue'
++-
++-const prodotto = ref('')
++-const lista = ref([])
++-
++-const aggiungi = () => {
++-  if (prodotto.value.trim() === '') return
++-  lista.value.push({
++-    id: Date.now,
++-    nome: prodotto.value.trim(),
++-  })
++-  prodotto.value = ''
++-}
++-</script>
++-<template>
++-  <h2>Lista della Spesa</h2>
++-  <div class="contenitore">
++-  <input
++-    type="text"
++-    v-model="prodotto"
++-    placeholder="inserisci prodotto..."
++-    @keyup.enter="aggiungi"
++-  />
++-  <button @click="aggiungi">Aggiungi</button>
++-  <ul>
++-    <li v-for="(item, indice) in lista" :key="item.id">
++-      {{ item.nome }} <button @click="lista.splice(indice, 1)" class="rimuovi">🗑️</button>
++-    </li>
++-  </ul>
++-  <p v-if="lista.length > 0">Totale prodotti: {{ lista.length }}</p>
++-  <p v-else>Nessun articolo - aggiungi qualcosa!</p>
++-  </div>
++-</template>
++-
++-<style scoped>
++-* {
++-  box-sizing: border-box;
++-}
++-h2 {
++-  text-align: center;
++-}
++-.contenitore {
++-  display: flex;
++-  flex-direction: column;
++-  gap: 10px;
++-  justify-content: center;
++-  align-items: center;
++-}
++-input {
++-  display: block;
++-  margin-top: 40px;
++-  width: 300px;
++-  padding: 4px;
++-  border-radius: 4px;
++-}
++-button {
++-  width: 150px;
++-  padding: 4px;
++-  cursor: pointer;
++-  border-radius: 4px;
++-}
++-
++-.rimuovi {
++-  border: none;
++-  background-color: transparent;
++-  width: 30px;
++-  transition: scale 0.3s ease-in-out;
++-}
++-
++-.rimuovi:hover {
++-  scale: 1.2;
++-}
++-
++-</style>
++diff --git a/biblioblab-vue-frontend/src/components/RicercaLibri.vue b/biblioblab-vue-frontend/src/components/RicercaLibri.vue
++index 3908215..623886b 100644
++--- a/biblioblab-vue-frontend/src/components/RicercaLibri.vue
+++++ b/biblioblab-vue-frontend/src/components/RicercaLibri.vue
++@@ -84,7 +84,7 @@ watch(filtro,(newFiltro, oldFiltro) => {
++     console.log({newFiltro: newFiltro, oldFiltro: oldFiltro})
++   }
++     loading.value = false
++-  }, 3000)
+++  }, 300)
++ 
++ })
++ 
++diff --git a/biblioblab-vue-frontend/src/view/CatalogoView.vue b/biblioblab-vue-frontend/src/view/CatalogoView.vue
+ new file mode 100644
+-index 0000000..59680a6
++index 0000000..e576232
+ --- /dev/null
+-+++ b/biblioblab-vue-frontend/src/components/LoadingSpinner.vue
+-@@ -0,0 +1,24 @@
+++++ b/biblioblab-vue-frontend/src/view/CatalogoView.vue
++@@ -0,0 +1,47 @@
+++<script setup>
+++import { ref, onMounted } from 'vue'
+++import LibroCard from '@/components/LibroCard.vue'
+++
+++const libri = ref([])
+++//Api call temporanea, da spostare nel file adatto
+++onMounted(async() => {
+++  try {
+++    const res = await fetch(`http://localhost:8000/api/libri/`, {
+++      method: 'GET',
+++      headers: {
+++        'Content-Type': 'application/json'
+++      }
+++    })
+++    if (!res.ok) {
+++      throw new Error(`Error in setTimeout fetch  ${res.statusText}`)
+++    }
+++    const data = await res.json()
+++    libri.value = data.results
+++    console.log({libri: libri.value})
+++  } catch(err) {
+++    console.error('Errore nel recupero libri', err)
+++  }
+++})
+++</script>
+++
+ +<template>
+-+  <div class="spinner"></div>
+++  <div class="parent">
+++    <LibroCard
+++    v-for="libro in libri" :key="libro.id" v-bind="libro"
+++    class="libro-card" />
+++  </div>
+ +</template>
+ +
+ +<style scoped>
+-+.spinner {
+-+  width: 20px;
+-+  height: 20px;
+-+  border: 5px solid #f3f3f3;
+-+  border-top: 5px solid #3498db;
+-+  border-radius: 50%;
+-+  animation: spin 1s linear infinite;
+-+  margin: 30% auto;
+++.parent {
+++  display: grid;
+++  grid-template-columns: repeat(4, 1fr);
+++  grid-template-rows: repeat(4, 1fr);
+++  gap: 8px;
+ +}
+ +
+-+@keyframes spin {
+-+  0% {
+-+    transform: rotate(0deg);
+-+  }
+-+  100% {
+-+    transform: rotate(360deg);
+-+  }
+++.libro-card {
+++  grid-column: span 2 / span 2;
+++  grid-row: span 4 / span 4;
+ +}
+ +</style>
+-diff --git a/biblioblab-vue-frontend/src/components/RicercaLibri.vue b/biblioblab-vue-frontend/src/components/RicercaLibri.vue
+-index 2b09838..5558e32 100644
+---- a/biblioblab-vue-frontend/src/components/RicercaLibri.vue
+-+++ b/biblioblab-vue-frontend/src/components/RicercaLibri.vue
+-@@ -1,5 +1,6 @@
+- <script setup>
+--import { ref, computed } from 'vue'
+-+import { ref, computed, watch } from 'vue'
+-+import LoadingSpinner from './LoadingSpinner.vue'
+- const libri = ref([
+-   {
+-     id: 1,
+-@@ -54,6 +55,19 @@ const libri = ref([
+- const filtro = ref('')
+- const genereSelezionato = ref('Tutti')
+- const soloDisponibili = ref(false)
+-+const loading = ref(false)
+-+
+-+let timeout = null
+-+watch(filtro,(nuovoFiltro, vecchioFiltro) => {
+-+  clearTimeout(timeout)
+-+  if (filtro.value.length < 3) return
+-+  loading.value = true
+-+  timeout = setTimeout(() => {
+-+    console.log({vecchioFiltro: vecchioFiltro, nuovoFiltro: nuovoFiltro})
+-+    loading.value = false
+-+  }, 3000)
+-+
+-+})
+- 
+- const libriFiltrati = computed(() => {
+-   let result = libri.value
+-@@ -80,6 +94,7 @@ const libriFiltrati = computed(() => {
+-       {{ libro.titolo }} di {{ libro.autore }} - genere: {{ libro.genere }} ({{ libro.anno }})
+-     </li>
+-   </ul> -->
+-+  <LoadingSpinner v-if="loading"/>
+-   <h3>Ricerca per genere, disponibilità, titolo o autore</h3>
+-   <div class="container">
+-     <input type="text" v-model="filtro" placeholder="Inserisci testo..." />
+diff --git a/biblioblab-vue-frontend/src/components/LibroCard.vue b/biblioblab-vue-frontend/src/components/LibroCard.vue
+index aa60ea3..08f0c84 100644
+--- a/biblioblab-vue-frontend/src/components/LibroCard.vue
++++ b/biblioblab-vue-frontend/src/components/LibroCard.vue
+@@ -1,11 +1,11 @@
+ <template>
+   <div class="container">
+     <section class="cover">
+-      <img :src="copertina" :alt="titolo" />
++      <img :src="cover_url" :alt="titolo" />
+     </section>
+ 
+-    <section class="content">
+-      <h3>{{ titolo }}title</h3>
++    <section class="header">
++      <h3>{{ titolo }}</h3>
+       <p><strong>Autore</strong>: {{ autore.nome }} {{ autore.cognome }}</p>
+     </section>
+ 
+@@ -13,7 +13,7 @@
+       <p><strong>Descrizione</strong>: {{ descrizione.slice(0, 200) }}...</p>
+     </section>
+     <section class="anno">
+-      <span><strong>anno</strong>: {{ anno }}</span
++      <span><strong>pubblicato</strong>: {{ anno_pubblicazione }}</span
+       ><span :class="disponibile ? 'green' : 'red'">{{
+         disponibile ? 'disponibile' : 'non disponibile'
+       }}</span>
+@@ -26,7 +26,7 @@
+ </template>
+ 
+ <script setup>
+-import defaultCover from '@/assets/libro_default.png'
++// import defaultCover from '@/assets/libro_default.png'
+ 
+ defineProps({
+   titolo: String,
+@@ -38,15 +38,18 @@ defineProps({
+     type: String,
+     default: '000-0-0000-0000-0',
+   },
+-  anno: Number,
++  anno_pubblicazione: Number,
+   genere: String,
+   disponibile: {
+     type: Boolean,
+     default: true,
+   },
+-  copertina: {
++  cover_url: {
+     type: String,
+-    default: defaultCover,
++    default: (props) =>
++    // `https://www.googleapis.com/books/v1/volumes?q=${props.titolo}`
++      `https://placehold.co/300x450/e2e8f0/1e293b?text=${encodeURIComponent(props.titolo || 'Book')}`,
++    // default: defaultCover,
+   },
+   descrizione: {
+     type: String,
+@@ -69,46 +72,107 @@ defineProps({
+ }
+ 
+ .container {
+-  width: 40vw;
++  width: 100%;
++  max-width: 500px;
+   min-width: 200px;
++  height: 100%;
++  min-height: 250px;
+   display: grid;
+-  grid-template-columns: repeat(2, 1fr);
+-  grid-template-rows: 1fr, 2fr, 1fr, 1fr;
++  /* grid-template-columns: repeat(2, 1fr);
++  grid-template-rows: 1fr, 2fr, 1fr, 1fr; */
++  grid-template-columns: 120px 1fr; /* Fixed width for cover, fluid for content */
++  grid-template-rows: auto auto auto auto; /* Let rows adjust based on content size */
+   gap: 8px;
+-  transition: scale 0.3s ease;
++  transition: scale 0.2s ease;
++  /* border: 1px solid blue; */
++  padding: 12px;
++  border-radius: 10px;
++  box-shadow: 1px 1px 12px;
+ }
+ .container:hover {
+-  scale: 1.1;
++  scale: 1.02;
+ }
+ 
+ .cover {
+-  grid-row: span 4 / span 4;
++  grid-row: span 4;
++  /* height: 100%; */
++  display: flex;
++  justify-content: center;
++  align-items: center;
+ }
+ img {
++  height: 100%;
+   width: 100%;
+-  object-fit: contain;
++  max-height: 200px;
++  object-fit: cover;
++  border-radius: 10px;
++  /* border: 1px solid blue; */
++  box-shadow: 1px 1px 24px gray;
++}
++h3 {
++  margin: 10px;
+ }
+-.content {
++/* .content {
+   grid-column-start: 2;
+   grid-row-start: 1;
++} */
++
++.header {
++  grid-column: 2;
++  grid-row: 1;
+ }
+-.description {
++
++/* .description {
+   grid-column-start: 2;
+   grid-row-start: 2;
++} */
++
++.description {
++  grid-column: 2;
++  grid-row: 2;
++  font-size: 0.85rem;
++  color: #475569;
+ }
++
++.anno {
++  grid-column: 2;
++  grid-row: 3;
++  display: flex;
++  flex-direction: column;
++  /* justify-content: space-between; */
++  gap: 16px;
++  font-size: 0.8rem;
++}
++
+ .green {
+   color: green;
+ }
+ .red {
+   color: red;
+ }
+-.anno {
++/* .anno {
+   grid-column-start: 2;
+   grid-row-start: 3;
+-}
++} */
+ 
+-.footer {
++/* .footer {
+   grid-column-start: 2;
+   grid-row-start: 4;
++} */
++
++.footer {
++  grid-column: 2;
++  grid-row: 4;
++  font-size: 0.75rem;
++  color: #94a3b8;
+ }
++
++/* @media screen and (max-width: 1200px) {
++  .container {
++    display: grid;
++    grid-template-columns: repeat(2, 1fr);
++    grid-template-rows: repeat(4, 1fr);
++    gap: 32px;
++  }
++} */
+ </style>
+diff --git a/biblioblab-vue-frontend/src/view/CatalogoView.vue b/biblioblab-vue-frontend/src/view/CatalogoView.vue
+index e576232..ce7e3f4 100644
+--- a/biblioblab-vue-frontend/src/view/CatalogoView.vue
++++ b/biblioblab-vue-frontend/src/view/CatalogoView.vue
+@@ -35,13 +35,28 @@ onMounted(async() => {
+ <style scoped>
+ .parent {
+   display: grid;
+-  grid-template-columns: repeat(4, 1fr);
+-  grid-template-rows: repeat(4, 1fr);
+-  gap: 8px;
++  /* grid-template-columns: repeat(6, 1fr); */
++  /* Automatically fits as many cards as possible, minimum width 280px */
++  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
++  /* grid-template-rows: repeat(4, 1fr); */
++  gap: 32px;
++
+ }
+ 
+ .libro-card {
+-  grid-column: span 2 / span 2;
+-  grid-row: span 4 / span 4;
++  /* grid-column: span 2 / span 2;
++  grid-row: span 4 / span 4; */
++  /* Remove explicit grid spans so they naturally flow into the auto columns */
++  grid-column: auto;
++  grid-row: auto;
++}
++
++/* @media screen and (max-width: 1200px) {
++ .parent {
++  display: grid;
++  grid-template-columns: repeat(4, 1fr);
++  grid-template-rows: repeat(4, 1fr);
++  gap: 32px;
+ }
++} */
+ </style>

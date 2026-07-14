@@ -25,6 +25,7 @@ onMounted(async() => {
 </script>
 
 <template>
+  <h1>Catalogo</h1>
   <div class="parent">
     <LibroCard
     v-for="libro in libri" :key="libro.id" v-bind="libro"
@@ -33,6 +34,10 @@ onMounted(async() => {
 </template>
 
 <style scoped>
+h1 {
+  text-align: center
+  ;
+}
 .parent {
   display: grid;
   /* grid-template-columns: repeat(6, 1fr); */
