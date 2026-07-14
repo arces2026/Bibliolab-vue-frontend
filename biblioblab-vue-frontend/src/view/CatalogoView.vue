@@ -35,13 +35,28 @@ onMounted(async() => {
 <style scoped>
 .parent {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  grid-template-rows: repeat(4, 1fr);
-  gap: 8px;
+  /* grid-template-columns: repeat(6, 1fr); */
+  /* Automatically fits as many cards as possible, minimum width 280px */
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  /* grid-template-rows: repeat(4, 1fr); */
+  gap: 32px;
+
 }
 
 .libro-card {
-  grid-column: span 2 / span 2;
-  grid-row: span 4 / span 4;
+  /* grid-column: span 2 / span 2;
+  grid-row: span 4 / span 4; */
+  /* Remove explicit grid spans so they naturally flow into the auto columns */
+  grid-column: auto;
+  grid-row: auto;
 }
+
+/* @media screen and (max-width: 1200px) {
+ .parent {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  gap: 32px;
+}
+} */
 </style>

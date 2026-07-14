@@ -1,11 +1,11 @@
 <template>
   <div class="container">
     <section class="cover">
-      <img :src="copertina" :alt="titolo" />
+      <img :src="cover_url" :alt="titolo" />
     </section>
 
-    <section class="content">
-      <h3>{{ titolo }}title</h3>
+    <section class="header">
+      <h3>{{ titolo }}</h3>
       <p><strong>Autore</strong>: {{ autore.nome }} {{ autore.cognome }}</p>
     </section>
 
@@ -13,7 +13,7 @@
       <p><strong>Descrizione</strong>: {{ descrizione.slice(0, 200) }}...</p>
     </section>
     <section class="anno">
-      <span><strong>anno</strong>: {{ anno }}</span
+      <span><strong>pubblicato</strong>: {{ anno_pubblicazione }}</span
       ><span :class="disponibile ? 'green' : 'red'">{{
         disponibile ? 'disponibile' : 'non disponibile'
       }}</span>
@@ -26,7 +26,7 @@
 </template>
 
 <script setup>
-import defaultCover from '@/assets/libro_default.png'
+// import defaultCover from '@/assets/libro_default.png'
 
 defineProps({
   titolo: String,
@@ -38,15 +38,18 @@ defineProps({
     type: String,
     default: '000-0-0000-0000-0',
   },
-  anno: Number,
+  anno_pubblicazione: Number,
   genere: String,
   disponibile: {
     type: Boolean,
     default: true,
   },
-  copertina: {
+  cover_url: {
     type: String,
-    default: defaultCover,
+    default: (props) =>
+    // `https://www.googleapis.com/books/v1/volumes?q=${props.titolo}`
+      `https://placehold.co/300x450/e2e8f0/1e293b?text=${encodeURIComponent(props.titolo || 'Book')}`,
+    // default: defaultCover,
   },
   descrizione: {
     type: String,
@@ -69,46 +72,107 @@ defineProps({
 }
 
 .container {
-  width: 40vw;
+  width: 100%;
+  max-width: 500px;
   min-width: 200px;
+  height: 100%;
+  min-height: 250px;
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: 1fr, 2fr, 1fr, 1fr;
+  /* grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: 1fr, 2fr, 1fr, 1fr; */
+  grid-template-columns: 120px 1fr; /* Fixed width for cover, fluid for content */
+  grid-template-rows: auto auto auto auto; /* Let rows adjust based on content size */
   gap: 8px;
-  transition: scale 0.3s ease;
+  transition: scale 0.2s ease;
+  /* border: 1px solid blue; */
+  padding: 12px;
+  border-radius: 10px;
+  box-shadow: 1px 1px 12px;
 }
 .container:hover {
-  scale: 1.1;
+  scale: 1.02;
 }
 
 .cover {
-  grid-row: span 4 / span 4;
+  grid-row: span 4;
+  /* height: 100%; */
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 img {
+  height: 100%;
   width: 100%;
-  object-fit: contain;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: 10px;
+  /* border: 1px solid blue; */
+  box-shadow: 1px 1px 24px gray;
 }
-.content {
+h3 {
+  margin: 10px;
+}
+/* .content {
   grid-column-start: 2;
   grid-row-start: 1;
+} */
+
+.header {
+  grid-column: 2;
+  grid-row: 1;
 }
-.description {
+
+/* .description {
   grid-column-start: 2;
   grid-row-start: 2;
+} */
+
+.description {
+  grid-column: 2;
+  grid-row: 2;
+  font-size: 0.85rem;
+  color: #475569;
 }
+
+.anno {
+  grid-column: 2;
+  grid-row: 3;
+  display: flex;
+  flex-direction: column;
+  /* justify-content: space-between; */
+  gap: 16px;
+  font-size: 0.8rem;
+}
+
 .green {
   color: green;
 }
 .red {
   color: red;
 }
-.anno {
+/* .anno {
   grid-column-start: 2;
   grid-row-start: 3;
-}
+} */
 
-.footer {
+/* .footer {
   grid-column-start: 2;
   grid-row-start: 4;
+} */
+
+.footer {
+  grid-column: 2;
+  grid-row: 4;
+  font-size: 0.75rem;
+  color: #94a3b8;
 }
+
+/* @media screen and (max-width: 1200px) {
+  .container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 32px;
+  }
+} */
 </style>
