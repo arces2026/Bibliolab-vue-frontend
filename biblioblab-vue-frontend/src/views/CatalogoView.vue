@@ -1,57 +1,51 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import LibroCard from '@/components/LibroCard.vue'
+import { useLibri } from '@/composable/useLibri'
 
+const libriComp = useLibri()
 const libri = ref([])
-const idInEvidenza = ref([])
+const idInEvidenza = ref(new Set())
 
 const evidenzia = (id) => {
-  const index = idInEvidenza.value.indexOf(id)
-  if (index !== -1) {
-    idInEvidenza.value.splice(index, 1)
-    console.log({ idInEvidenza: idInEvidenza.value })
+  if (idInEvidenza.value.has(id)) {
+    idInEvidenza.value.delete(id)
   } else {
-    idInEvidenza.value.push(id)
-    console.log({ idInEvidenza: idInEvidenza.value })
+    idInEvidenza.value.add(id)
   }
+  // Ricrea il Set per reattività Vue
+  idInEvidenza.value = new Set(idInEvidenza.value)
+  console.log({ inEvidenza: inEvidenza.value(id) })
 }
 
 const inEvidenza = computed(() => {
-  console.log({ inEvidenza: inEvidenza })
+  //has() for set includes() for array
   return (id) => idInEvidenza.value.has(id)
 })
 
-//Api call temporanea, da spostare nel file adatto
+const libriDisponibili = computed(() => {
+  return libri.value.filter(l => l.disponibile).length
+})
+
+const totaleLibri = computed(() => libri.value.length)
+
 onMounted(async () => {
-  try {
-    const res = await fetch(`http://localhost:8000/api/libri/`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-    if (!res.ok) {
-      throw new Error(`Error in setTimeout fetch  ${res.statusText}`)
-    }
-    const data = await res.json()
-    libri.value = data.results
-    console.log({ libri: libri.value })
-  } catch (err) {
-    console.error('Errore nel recupero libri', err)
-  }
+  libri.value = await libriComp.getLibri(`http://localhost:8000/api/libri/`)
+  console.log({libriComp: libri.value})
 })
 </script>
 
 <template>
   <div class="container">
     <h1>Catalogo</h1>
+    <h2>{{ libriDisponibili }} libri disponibili su {{ totaleLibri }}</h2>
     <div class="parent">
       <LibroCard
         v-for="libro in libri"
         :key="libro.id"
         v-bind="libro"
         @evidenzia="evidenzia"
-        :inEvidenza="idInEvidenza.includes(libro.id)"
+        :inEvidenza="idInEvidenza.has(libro.id)"
         class="libro-card"
       />
     </div>
