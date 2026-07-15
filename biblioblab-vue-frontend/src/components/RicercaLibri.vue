@@ -2,56 +2,6 @@
 import { ref, computed, watch } from 'vue'
 import LoadingSpinner from './LoadingSpinner.vue'
 
-const libri = ref([
-  {
-    id: 1,
-    titolo: 'Il Nome della Rosa',
-    autore: 'Umberto Eco',
-    anno: 1980,
-    genere: 'Giallo storico',
-    disponibile: true,
-  },
-  {
-    id: 2,
-    titolo: '1984',
-    autore: 'George Orwell',
-    anno: 1949,
-    genere: 'Fantascienza distopica',
-    disponibile: false,
-  },
-  {
-    id: 3,
-    titolo: 'Il Signore degli Anelli',
-    autore: 'J.R.R. Tolkien',
-    anno: 1954,
-    genere: 'Fantasy',
-    disponibile: true,
-  },
-  {
-    id: 4,
-    titolo: 'Orgoglio e Pregiudizio',
-    autore: 'Jane Austen',
-    anno: 1813,
-    genere: 'Romanzo rosa',
-    disponibile: true,
-  },
-  {
-    id: 5,
-    titolo: 'Il Giovane Holden',
-    autore: 'J.D. Salinger',
-    anno: 1951,
-    genere: 'Romanzo di formazione',
-    disponibile: false,
-  },
-  {
-    id: 6,
-    titolo: "Cent'anni di Solitudine",
-    autore: 'Gabriel García Márquez',
-    anno: 1967,
-    genere: 'Realismo magico',
-    disponibile: true,
-  },
-])
 
 const libriApi = ref([])
 

@@ -2,10 +2,11 @@
   <div class="container">
     <section class="cover">
       <img :src="cover_url" :alt="titolo" />
+      <span class='isbn'>isbn: {{ isbn }} </span>
     </section>
 
     <section class="header">
-      <h3>{{ titolo }}</h3>
+      <h3>{{ titolo }} <span v-if="inEvidenza">⭐</span></h3>
       <p><strong>Autore</strong>: {{ autore.nome }} {{ autore.cognome }}</p>
     </section>
 
@@ -13,22 +14,25 @@
       <p><strong>Descrizione</strong>: {{ descrizione.slice(0, 200) }}...</p>
     </section>
     <section class="anno">
-      <span><strong>pubblicato</strong>: {{ anno_pubblicazione }}</span
+      <span><strong>pubblicato nel</strong>: {{ anno_pubblicazione }}</span
       ><span :class="disponibile ? 'green' : 'red'">{{
         disponibile ? 'disponibile' : 'non disponibile'
       }}</span>
+      <button @click="onEvidenzia(id)" class="evidenzia">Evidenzia ⭐</button>
     </section>
 
     <section class="footer">
-      <span>isbn: {{ isbn }} </span>
+      <!-- <span>isbn: {{ isbn }} </span> -->
     </section>
   </div>
 </template>
 
 <script setup>
+// import { emit } from 'vue'
 // import defaultCover from '@/assets/libro_default.png'
 
-defineProps({
+const props = defineProps({
+  id: Number,
   titolo: String,
   autore: {
     type: Object,
@@ -47,7 +51,7 @@ defineProps({
   cover_url: {
     type: String,
     default: (props) =>
-    // `https://www.googleapis.com/books/v1/volumes?q=${props.titolo}`
+      // `https://www.googleapis.com/books/v1/volumes?q=${props.titolo}`
       `https://placehold.co/300x450/e2e8f0/1e293b?text=${encodeURIComponent(props.titolo || 'Book')}`,
     // default: defaultCover,
   },
@@ -60,7 +64,16 @@ defineProps({
      ut aliquip ex ea commodo consequat. Duis aute irure dolor in
      .`,
   },
+  inEvidenza: {
+    type: Boolean,
+    default: false
+  }
 })
+
+
+const emit = defineEmits(['evidenzia'])
+
+const onEvidenzia = () => emit('evidenzia', props.id)
 </script>
 
 <style scoped>
@@ -88,6 +101,7 @@ defineProps({
   padding: 12px;
   border-radius: 10px;
   box-shadow: 1px 1px 12px;
+  background-color: #ffffff;
 }
 .container:hover {
   scale: 1.02;
@@ -97,15 +111,22 @@ defineProps({
   grid-row: span 4;
   /* height: 100%; */
   display: flex;
-  justify-content: center;
+  justify-content: space-evenly;
   align-items: center;
+  flex-direction: column;
+}
+
+.isbn {
+    font-size: 0.75rem;
+  color: #94a3b8;
+
 }
 img {
   height: 100%;
   width: 100%;
   max-height: 200px;
   object-fit: cover;
-  border-radius: 2px 5px 5px 2px ;
+  border-radius: 2px 5px 5px 2px;
   /* border: 1px solid blue; */
   box-shadow: 1px 1px 24px gray;
 }
@@ -150,29 +171,16 @@ h3 {
 .red {
   color: red;
 }
-/* .anno {
-  grid-column-start: 2;
-  grid-row-start: 3;
-} */
 
-/* .footer {
-  grid-column-start: 2;
-  grid-row-start: 4;
-} */
-
-.footer {
-  grid-column: 2;
-  grid-row: 4;
-  font-size: 0.75rem;
-  color: #94a3b8;
+.evidenzia {
+  padding: 5px;
+  width: 80%;
+  margin: auto;
+  border-radius: 5px;
+  transition: background-color 0.2s ease-in-out;
 }
 
-/* @media screen and (max-width: 1200px) {
-  .container {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: repeat(4, 1fr);
-    gap: 32px;
-  }
-} */
+.evidenzia:hover {
+  background-color: rgb(202, 211, 211);
+}
 </style>
