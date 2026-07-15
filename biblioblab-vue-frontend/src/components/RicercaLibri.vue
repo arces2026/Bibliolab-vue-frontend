@@ -8,6 +8,7 @@ const libri = ref([])
 // const generi = ref(['Romanzo', 'Saggio', 'Racconti', 'Classico', 'Contemporaneo'])
 const filtro = ref('')
 const genereSelezionato = ref('Tutti')
+const libriFiltratiPerGenere = ref([])
 const soloDisponibili = ref(false)
 const loading = ref(false)
 
@@ -75,9 +76,9 @@ const libriFiltrati = computed(() => {
   if (soloDisponibili.value) {
     result = libri.value.filter((l) => l.disponibile)
   }
-  if (genereSelezionato.value !== 'Tutti') {
-    result = result.filter((l) => l.categorie?.includes(genereSelezionato.value))
-  }
+  // if (genereSelezionato.value !== 'Tutti') {
+  //   result = result.filter((l) => l.categorie?.includes(genereSelezionato.value))
+  // }
 
   if (!filtro.value) return result
 
@@ -93,11 +94,25 @@ const libriFiltrati = computed(() => {
   })
 })
 
-// const seleziona = () => {
-//   if (genereSelezionato.value !== 'Tutti') {
-//    return libri.value.filter((l) => l.categorie?.includes(genereSelezionato.value))
-//   }
-// }
+const getLibriByGenere = async() => {
+  try{
+    const res = await fetch(`http://localhost:8000/api/libri/`)
+    if (!res.ok) {
+      throw new Error('Error fetching book by genre', Error.message)
+       }
+      const data = await res.json()
+      libri.value = data.results
+      if (genereSelezionato.value !== 'Tutti'){
+
+      libriFiltratiPerGenere.value = libri.value.filter((l) => l.categorie?.includes(genereSelezionato.value))
+      console.log({bookByGenre: libriFiltratiPerGenere.value})
+      } else {
+        libriFiltratiPerGenere.value = libri.value
+      }
+  } catch(err){
+    console.error('Error catch in search by genre', err)
+  }
+}
 </script>
 <template>
   <h2>Ricerca libri</h2>
@@ -120,10 +135,7 @@ const libriFiltrati = computed(() => {
       <option selected>Tutti</option>
       <option v-for="genere in generi" :key="genere" :value="genere">{{ genere }}</option>
     </select> -->
-    <CampoSelect
-    v-model="genereSelezionato"
-    :opzioni="generi"
-    />
+
     <!-- <CampoSelect
     v-model="genereSelezionato"
     @change="seleziona"
@@ -137,7 +149,12 @@ const libriFiltrati = computed(() => {
     </ul> -->
   <h3>{{ libriFiltrati.length }} libri trovati su {{ libri.length }}</h3>
   <div class="parent">
-    <LibroCard v-for="libro in libriFiltrati" :key="libro.id" v-bind="libro"  class="libro-card"/>
+    <LibroCard v-for="libro in libriFiltrati" :key="libro.id" v-bind="libro" class="libro-card" />
+  </div>
+  <h3>Libri filtrati per genere</h3>
+  <CampoSelect v-model="genereSelezionato" :opzioni="generi" @change="getLibriByGenere" />
+  <div class="parent">
+    <LibroCard v-for="libro in libriFiltratiPerGenere" :key="libro.id" v-bind="libro" class="libro-card" />
   </div>
 </template>
 
@@ -146,6 +163,11 @@ const libriFiltrati = computed(() => {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+}
+
+.filtro-genere {
+  width: 200px;
+  margin: auto;
 }
 h2 {
   text-align: center;
