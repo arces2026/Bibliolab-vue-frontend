@@ -2,16 +2,27 @@
   <div class="container">
     <section class="cover">
       <img :src="cover_url" :alt="titolo" />
-      <span class='isbn'>isbn: {{ isbn }} </span>
+      <span class="isbn">isbn: {{ isbn }} </span>
     </section>
 
     <section class="header">
       <h3>{{ titolo }} <span v-if="inEvidenza">⭐</span></h3>
       <p><strong>Autore</strong>: {{ autore.nome }} {{ autore.cognome }}</p>
+      <hr />
+    </section>
+
+    <section class="genere">
+      <ul class="genere">
+        <strong>Genere</strong
+        >:
+        <li v-for="genere in categorie" :key="genere">{{ genere }}</li>
+      </ul>
+      <hr />
     </section>
 
     <section class="description">
       <p><strong>Descrizione</strong>: {{ descrizione.slice(0, 200) }}...</p>
+      <hr />
     </section>
     <section class="anno">
       <span><strong>pubblicato nel</strong>: {{ anno_pubblicazione }}</span
@@ -43,7 +54,8 @@ const props = defineProps({
     default: '000-0-0000-0000-0',
   },
   anno_pubblicazione: Number,
-  genere: String,
+  categorie: Array,
+  // genere: String,
   disponibile: {
     type: Boolean,
     default: true,
@@ -66,10 +78,9 @@ const props = defineProps({
   },
   inEvidenza: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 })
-
 
 const emit = defineEmits(['evidenzia'])
 
@@ -84,6 +95,12 @@ const onEvidenzia = () => emit('evidenzia', props.id)
   /* border: 1px solid; */
 }
 
+hr {
+  width: 70%;
+  margin: 5px auto;
+  border-color: rgba(245, 242, 242, 0.021);
+  box-shadow: 1px 1px 10px;
+}
 .container {
   width: 100%;
   max-width: 500px;
@@ -117,9 +134,8 @@ const onEvidenzia = () => emit('evidenzia', props.id)
 }
 
 .isbn {
-    font-size: 0.75rem;
+  font-size: 0.75rem;
   color: #94a3b8;
-
 }
 img {
   height: 100%;
@@ -133,31 +149,28 @@ img {
 h3 {
   margin: 10px;
 }
-/* .content {
-  grid-column-start: 2;
-  grid-row-start: 1;
-} */
 
 .header {
   grid-column: 2;
   grid-row: 1;
 }
 
-/* .description {
-  grid-column-start: 2;
-  grid-row-start: 2;
-} */
+.genere {
+  list-style: none;
+  grid-column: 2;
+  grid-row: 2;
+}
 
 .description {
   grid-column: 2;
-  grid-row: 2;
+  grid-row: 3;
   font-size: 0.85rem;
   color: #475569;
 }
 
 .anno {
   grid-column: 2;
-  grid-row: 3;
+  grid-row: 4;
   display: flex;
   flex-direction: column;
   /* justify-content: space-between; */
@@ -178,6 +191,7 @@ h3 {
   margin: auto;
   border-radius: 5px;
   transition: background-color 0.2s ease-in-out;
+  cursor: pointer;
 }
 
 .evidenzia:hover {
