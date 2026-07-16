@@ -1,2265 +1,349 @@
-diff --git a/biblioblab-vue-frontend/src/components/CampoSelect.vue b/biblioblab-vue-frontend/src/components/CampoSelect.vue
-new file mode 100644
-index 0000000..1ad0b6f
---- /dev/null
-+++ b/biblioblab-vue-frontend/src/components/CampoSelect.vue
-@@ -0,0 +1,37 @@
-+<script setup>
-+//per supportare il v-model custom il componente deve:
-+//1. Accettare la prop 'modelValue'
-+//2. Emettere l'evento 'update:modelValue'
-+const props = defineProps({
-+  modelValue: {
-+    type: String,
-+     default: ''
-+    },
-+  label: {
-+    type: String,
-+     default: '',
-+    },
-+    opzioni: {
-+      type: Array,
-+      default: () => []
-+    },
-+    errore: {
-+      type: String,
-+      default: ''
-+    }
-+})
-+
-+const emit = defineEmits(['update:modelValue', 'change'])
-+
-+const onChange = (e) => {
-+  emit('update:modelValue', e.target.value)
-+}
-+</script>
-+
-+<template>
-+  <label :for="label">{{ label }}</label>
-+  <select :id='label' @change="onChange" :value='modelValue' :class="{'errore':errore}">
-+    <option v-for="opt in props.opzioni" :key=opt.value :value="opt.value">{{ opt.label }}</option>
-+  </select>
-+  <span v-if="errore" class="errore-msg">{{ errore }}</span>
-+</template>
-diff --git a/biblioblab-vue-frontend/src/components/LibroCard.vue b/biblioblab-vue-frontend/src/components/LibroCard.vue
-index 1d7bd9c..223ed70 100644
---- a/biblioblab-vue-frontend/src/components/LibroCard.vue
-+++ b/biblioblab-vue-frontend/src/components/LibroCard.vue
-@@ -2,16 +2,27 @@
-   <div class="container">
-     <section class="cover">
-       <img :src="cover_url" :alt="titolo" />
--      <span class='isbn'>isbn: {{ isbn }} </span>
-+      <span class="isbn">isbn: {{ isbn }} </span>
-     </section>
+diff --git a/biblioblab-vue-frontend/src/App.vue b/biblioblab-vue-frontend/src/App.vue
+index 7c9522d..767a472 100644
+--- a/biblioblab-vue-frontend/src/App.vue
++++ b/biblioblab-vue-frontend/src/App.vue
+@@ -1,17 +1,29 @@
+ <script setup>
+-import RicercaLibri from './components/RicercaLibri.vue';
+-import SchedaLibro from './components/SchedaLibro.vue';
+-import CatalogoView from './view/CatalogoView.vue';
++// import RicercaLibri from './components/RicercaLibri.vue';
++// import SchedaLibro from './components/SchedaLibro.vue';
++// import CatalogoView from './views/CatalogoView.vue';
  
-     <section class="header">
-       <h3>{{ titolo }} <span v-if="inEvidenza">⭐</span></h3>
-       <p><strong>Autore</strong>: {{ autore.nome }} {{ autore.cognome }}</p>
-+      <hr />
-+    </section>
-+
-+    <section class="genere">
-+      <ul class="genere">
-+        <strong>Genere</strong
-+        >:
-+        <li v-for="genere in categorie" :key="genere">{{ genere }}</li>
-+      </ul>
-+      <hr />
-     </section>
  
-     <section class="description">
-       <p><strong>Descrizione</strong>: {{ descrizione.slice(0, 200) }}...</p>
-+      <hr />
-     </section>
-     <section class="anno">
-       <span><strong>pubblicato nel</strong>: {{ anno_pubblicazione }}</span
-@@ -43,7 +54,8 @@ const props = defineProps({
-     default: '000-0-0000-0000-0',
-   },
-   anno_pubblicazione: Number,
--  genere: String,
-+  categorie: Array,
-+  // genere: String,
-   disponibile: {
-     type: Boolean,
-     default: true,
-@@ -66,11 +78,10 @@ const props = defineProps({
-   },
-   inEvidenza: {
-     type: Boolean,
--    default: false
--  }
-+    default: false,
-+  },
+ </script>
+ 
+ <template>
++  <div id="app">
++    <nav class="navbar">
++      <RouterLink to="/" class="logo" >Bibliolab</RouterLink>
++      <RouterLink :to="{name: 'catalogo'}">Libri</RouterLink>
++      <RouterLink :to="{name: 'scheda-libro'}">Scheda Libro</RouterLink>
++      <RouterLink :to="{name: 'ricerca'}">Ricerca Libri</RouterLink>
++      <!-- <RouterLink :to="{name: 'prestiti'}">Prestiti</RouterLink> -->
++    </nav>
++    <main>
++      <RouterView />
++    </main>
++  </div>
+   <!-- <ContatoreVue/>
+   <ListaSpesa /> -->
+-  <CatalogoView />
++  <!-- <CatalogoView />
+   <SchedaLibro />
+-  <RicercaLibri />
++  <RicercaLibri /> -->
+ </template>
+ 
+ <style scoped></style>
+diff --git a/biblioblab-vue-frontend/src/components/SchedaLibro.vue b/biblioblab-vue-frontend/src/components/SchedaLibro.vue
+index 2068488..054f760 100644
+--- a/biblioblab-vue-frontend/src/components/SchedaLibro.vue
++++ b/biblioblab-vue-frontend/src/components/SchedaLibro.vue
+@@ -1,29 +1,51 @@
+ <script setup>
+-import { computed, reactive } from 'vue';
++import { computed, reactive, ref } from 'vue';
++import { useLibri } from '@/composable/useLibri';
++import LoadingSpinner from './LoadingSpinner.vue';
++
++const libriComp = useLibri()
++const success = ref('')
++const error = ref('')
++const loading = ref(false)
+ 
+ const libro = reactive({
+   titolo: '',
+   autore: '',
+   isbn: '',
+-  anno: null,
+-  genere: 'narrativa',
++  anno_pubblicazione: null,
++  categorie: 'romanzo',
+   disponibile: true,
+-  descrizione: ''
++  descrizione: '',
++  cover_url: ''
  })
  
--
- const emit = defineEmits(['evidenzia'])
+ const formValido = computed(() =>
+   libro.titolo.trim() !== '' && libro.autore.trim() !== ''
+ )
  
- const onEvidenzia = () => emit('evidenzia', props.id)
-@@ -84,6 +95,12 @@ const onEvidenzia = () => emit('evidenzia', props.id)
-   /* border: 1px solid; */
- }
- 
-+hr {
-+  width: 70%;
-+  margin: 5px auto;
-+  border-color: rgba(245, 242, 242, 0.021);
-+  box-shadow: 1px 1px 10px;
-+}
- .container {
-   width: 100%;
-   max-width: 500px;
-@@ -117,9 +134,8 @@ const onEvidenzia = () => emit('evidenzia', props.id)
- }
- 
- .isbn {
--    font-size: 0.75rem;
-+  font-size: 0.75rem;
-   color: #94a3b8;
--
- }
- img {
-   height: 100%;
-@@ -133,31 +149,28 @@ img {
- h3 {
-   margin: 10px;
- }
--/* .content {
--  grid-column-start: 2;
--  grid-row-start: 1;
--} */
- 
- .header {
-   grid-column: 2;
-   grid-row: 1;
- }
- 
--/* .description {
--  grid-column-start: 2;
--  grid-row-start: 2;
--} */
-+.genere {
-+  list-style: none;
-+  grid-column: 2;
-+  grid-row: 2;
-+}
- 
- .description {
-   grid-column: 2;
--  grid-row: 2;
-+  grid-row: 3;
-   font-size: 0.85rem;
-   color: #475569;
- }
- 
- .anno {
-   grid-column: 2;
--  grid-row: 3;
-+  grid-row: 4;
-   display: flex;
-   flex-direction: column;
-   /* justify-content: space-between; */
-@@ -178,6 +191,7 @@ h3 {
-   margin: auto;
-   border-radius: 5px;
-   transition: background-color 0.2s ease-in-out;
-+  cursor: pointer;
- }
- 
- .evidenzia:hover {
-diff --git a/biblioblab-vue-frontend/src/components/RicercaLibri.vue b/biblioblab-vue-frontend/src/components/RicercaLibri.vue
-index 40a2484..65914cd 100644
---- a/biblioblab-vue-frontend/src/components/RicercaLibri.vue
-+++ b/biblioblab-vue-frontend/src/components/RicercaLibri.vue
-@@ -1,41 +1,73 @@
- <script setup>
--import { ref, computed, watch } from 'vue'
-+import { ref, computed, watch, onMounted } from 'vue'
- import LoadingSpinner from './LoadingSpinner.vue'
-+import LibroCard from './LibroCard.vue'
-+import CampoSelect from './CampoSelect.vue'
- 
--
--const libriApi = ref([])
--
-+const libri = ref([])
-+// const generi = ref(['Romanzo', 'Saggio', 'Racconti', 'Classico', 'Contemporaneo'])
- const filtro = ref('')
- const genereSelezionato = ref('Tutti')
- const soloDisponibili = ref(false)
- const loading = ref(false)
- 
-+onMounted(async() => {
+-const salva = () => {
+-  console.log('Libro salvato correttamente', libro)
+-  alert('Libro salvato correttamente')
+-  setTimeout(() => {
+-  for (const key in libro){
+-     libro[key] = ''
++const salva = async() => {
++  // console.log('Libro salvato correttamente', libro)
++  // alert('Libro salvato correttamente')
++  // setTimeout(() => {
++  // for (const key in libro){
++  //    libro[key] = ''
++  // }
++  // }, 4000)
 +  try {
-+    const res = await fetch(`http://localhost:8000/api/libri/`)
-+    if (!res.ok){
-+      throw new Error('Error during the fetch for genres', Error.message)
-+    }
-+    const data = await res.json()
-+    libri.value = data.results
-+    console.log({libriData: libri.value})
++    loading.value = true
++  // const result = await libriComp.newLibro(`https://jsonplaceholder.typicode.com/posts`, libro )
++  // non ho access token al momento
++  const result = await libriComp.newLibro(`http://localhost:8000/api/libri/`, libro )
++  console.log('Success', result)
++   success.value = `Libro ${libro.titolo} salvato correttamente`
 +  }catch(err){
-+    console.error('Error fetching onMounted', err)
++    console.log('Caught err', err)
++    error.value = `Errore nel salvataggio del libro: ${err}`
++  } finally{
++    loading.value = false
+   }
+-  }, 4000)
+ }
++
+ </script>
+ 
+ <template>
+@@ -32,18 +54,22 @@ const salva = () => {
+     <input type="text" v-model="libro.titolo" placeholder="titolo" required>
+     <input type="text" v-model="libro.autore" placeholder="autore" required>
+     <input type="text" v-model="libro.isbn" placeholder="isbn">
+-    <input type="number" v-model="libro.anno" placeholder="anno">
+-    <select name="" id="">
+-      <option value="narrativa" selected>Narrativa</option>
++    <input type="number" v-model="libro.anno_pubblicazione" placeholder="anno">
++    <select v-model="libro.categorie">
++      <option value="saggio">Saggio</option>
+       <option value="romanzo" >Romanzo</option>
+-      <option value="storico" >Storico</option>
+-      <option value="novella" >Novella</option>
+-      <option value="tecnico" >Tecnico</option>
++      <option value="classico" >Classico</option>
++      <option value="racconti" >Racconti</option>
++      <option value="contemporaneo" >Contemporaneo</option>
+     </select>
++    <LoadingSpinner v-if="loading"/>
+     <label for="disponibile">Disponibile</label>
+     <input type="checkbox" v-model="libro.disponibile" id="disponibile">
++    <input type="url" v-model="libro.cover_url" placeholder="inserisci url cover...">
+     <textarea name="" id="" v-model="libro.descrizione"></textarea>
+     <button :disabled="!formValido">Salva</button>
++    <p v-if="success">{{ success }}</p>
++    <p v-else>{{ error }}</p>
+   </form>
+ </template>
+ 
+diff --git a/biblioblab-vue-frontend/src/composable/useLibri.js b/biblioblab-vue-frontend/src/composable/useLibri.js
+new file mode 100644
+index 0000000..b2d5a0e
+--- /dev/null
++++ b/biblioblab-vue-frontend/src/composable/useLibri.js
+@@ -0,0 +1,51 @@
++import { ref } from 'vue'
++
++export function useLibri() {
++  const libri = ref([])
++  const loading = ref(false)
++  const error = ref(null)
++
++  const getLibri = async (url) => {
++    loading.value = true
++    try {
++      const res = await fetch(url)
++      if (!res.ok) {
++        throw new Error(`Error in getLibri: ${res.status} ${res.statusText}`)
++      }
++      const data = await res.json()
++      libri.value = data.results
++      return data.results
++    } catch (err) {
++      console.error('Error caught in getLibri', err)
++      error.value = err.message || 'Unknown error'
++    } finally {
++      loading.value = false
++    }
 +  }
-+})
-+// const generi = computed(() => {
-+//   const gen = new Set();
-+//    for (const libro of libri.value) {
-+//     for (const genere of libro.categorie){
-+//       gen.add(genere)
-+//     }
-+//    }
-+//    return [...gen]
-+// })
 +
-+// Get all genres from the first onMounted fetch
-+// cleaner using flatMap() to flatten all categories in one Array
-+// then returning objects since the template expects {value, label}
-+const generi = computed(() => {
-+  const unique = [...new Set(libri.value.flatMap(l => l.categorie))];
-+  return  [{ value: 'Tutti', label: 'Tutti' }, ...unique.map(g => ({ value: g, label: g }))];
-+});
-+
- let timeout = null
--watch(filtro,(newFiltro, oldFiltro) => {
-+watch(filtro, (newFiltro, oldFiltro) => {
-   clearTimeout(timeout)
-   if (filtro.value.length < 3) return
-   loading.value = true
--  timeout = setTimeout(async() => {
-+  timeout = setTimeout(async () => {
-     try {
--    const res = await fetch(`http://localhost:8000/api/libri/`, {
--      method: 'GET',
--      headers: {
--        'Content-Type': 'application/json'
-+      const res = await fetch(`http://localhost:8000/api/libri/`, {
-+        method: 'GET',
++  const newLibro = async (url, dati) => {
++    loading.value = true
++    try {
++      const res = await fetch(url, {
++        method: 'POST',
 +        headers: {
 +          'Content-Type': 'application/json',
++          body: JSON.stringify(dati),
 +        },
 +      })
 +      if (!res.ok) {
-+        throw new Error('Error in setTimeout fetch', Error.message)
-       }
++        throw new Error(`Error creating a book: ${res.status}, ${res.statusText}`)
++      }
++      const data = await res.json()
++      libri.value.push(data)
++      return data
++    } catch (err) {
++      error.value = `Error caught in newLibro: ${err.message}`
++      throw err
++    } finally {
++      loading.value = false
++    }
++  }
++
++  return { libri, loading, error, getLibri, newLibro }
++}
+diff --git a/biblioblab-vue-frontend/src/router/index.js b/biblioblab-vue-frontend/src/router/index.js
+index e1eab52..ba402ca 100644
+--- a/biblioblab-vue-frontend/src/router/index.js
++++ b/biblioblab-vue-frontend/src/router/index.js
+@@ -1,8 +1,36 @@
+ import { createRouter, createWebHistory } from 'vue-router'
+ 
++
++
++const routes = [
++{
++  path: '/',
++  redirect: '/libri'
++},
++{
++  path: '/libri',
++  name: 'catalogo',
++  component: () => import('@/views/CatalogoView.vue'),
++  meta: {titoloPagina: 'Catalogo Libri'}
++},
++{
++  path: '/scheda-libro',
++  name: 'scheda-libro',
++  component: () => import('@/views/SchedaLibroView.vue'),
++  meta: {titoloPagina: 'Scheda Libro'}
++},
++{
++  path: '/ricerca',
++  name: 'ricerca',
++  component: () => import('@/views/RicercaLibriView.vue'),
++  meta: {titoloPagina: 'Ricerca Libri'}
++}
++]
++
+ const router = createRouter({
+   history: createWebHistory(import.meta.env.BASE_URL),
+-  routes: [],
++  routes,
++  //torna in cima ad ogni navigazione
++  scrollBehavior: () => ({top: 0})
+ })
+-
+ export default router
+diff --git a/biblioblab-vue-frontend/src/view/CatalogoView.vue b/biblioblab-vue-frontend/src/views/CatalogoView.vue
+similarity index 60%
+rename from biblioblab-vue-frontend/src/view/CatalogoView.vue
+rename to biblioblab-vue-frontend/src/views/CatalogoView.vue
+index 819a61a..3dd8e4f 100644
+--- a/biblioblab-vue-frontend/src/view/CatalogoView.vue
++++ b/biblioblab-vue-frontend/src/views/CatalogoView.vue
+@@ -1,57 +1,51 @@
+ <script setup>
+ import { ref, onMounted, computed } from 'vue'
+ import LibroCard from '@/components/LibroCard.vue'
++import { useLibri } from '@/composable/useLibri'
+ 
++const libriComp = useLibri()
+ const libri = ref([])
+-const idInEvidenza = ref([])
++const idInEvidenza = ref(new Set())
+ 
+ const evidenzia = (id) => {
+-  const index = idInEvidenza.value.indexOf(id)
+-  if (index !== -1) {
+-    idInEvidenza.value.splice(index, 1)
+-    console.log({ idInEvidenza: idInEvidenza.value })
++  if (idInEvidenza.value.has(id)) {
++    idInEvidenza.value.delete(id)
+   } else {
+-    idInEvidenza.value.push(id)
+-    console.log({ idInEvidenza: idInEvidenza.value })
++    idInEvidenza.value.add(id)
+   }
++  // Ricrea il Set per reattività Vue
++  idInEvidenza.value = new Set(idInEvidenza.value)
++  console.log({ inEvidenza: inEvidenza.value(id) })
+ }
+ 
+ const inEvidenza = computed(() => {
+-  console.log({ inEvidenza: inEvidenza })
++  //has() for set includes() for array
+   return (id) => idInEvidenza.value.has(id)
+ })
+ 
+-//Api call temporanea, da spostare nel file adatto
++const libriDisponibili = computed(() => {
++  return libri.value.filter(l => l.disponibile).length
++})
++
++const totaleLibri = computed(() => libri.value.length)
++
+ onMounted(async () => {
+-  try {
+-    const res = await fetch(`http://localhost:8000/api/libri/`, {
+-      method: 'GET',
+-      headers: {
+-        'Content-Type': 'application/json',
+-      },
 -    })
 -    if (!res.ok) {
--      throw new Error('Error in setTimeout fetch', Error.message)
-+      const data = await res.json()
-+      libri.value = data.results
-+      console.log({ libri: libri.value, results: data.results })
-+    } catch (err) {
-+      console.error('Error while fetching libri', err)
-+    } finally {
-+      console.log({ newFiltro: newFiltro, oldFiltro: oldFiltro })
-     }
--    libriApi.value = await res.json()
--    console.log({libriApi: libriApi.value})
--  } catch(err) {
--    console.error('Error while fetching libri', err)
--  } finally {
--    console.log({newFiltro: newFiltro, oldFiltro: oldFiltro})
+-      throw new Error(`Error in setTimeout fetch  ${res.statusText}`)
+-    }
+-    const data = await res.json()
+-    libri.value = data.results
+-    console.log({ libri: libri.value })
+-  } catch (err) {
+-    console.error('Errore nel recupero libri', err)
 -  }
-     loading.value = false
-   }, 300)
--
++  libri.value = await libriComp.getLibri(`http://localhost:8000/api/libri/`)
++  console.log({libriComp: libri.value})
  })
- 
- const libriFiltrati = computed(() => {
-@@ -44,16 +76,28 @@ const libriFiltrati = computed(() => {
-     result = libri.value.filter((l) => l.disponibile)
-   }
-   if (genereSelezionato.value !== 'Tutti') {
--    result = result.filter((l) => l.genere === genereSelezionato.value)
-+    result = result.filter((l) => l.categorie?.includes(genereSelezionato.value))
-   }
- 
-   if (!filtro.value) return result
--  return result.filter(
--    (l) =>
--      l.titolo.toLowerCase().includes(filtro.value) ||
--      l.autore.toLowerCase().includes(filtro.value),
--  )
-+
-+
-+
-+  // return result.filter((l) => {
-+  return result.filter((l) => {
-+    const titolo = (l.titolo || '').toLowerCase()
-+    const autore = (l.autore.nome || '').toLowerCase()
-+    const search = filtro.value.toLowerCase()
-+    console.log({ resultfiler: titolo.includes(search) || autore.includes(search)})
-+    return titolo.includes(search) || autore.includes(search)
-+  })
- })
-+
-+// const seleziona = () => {
-+//   if (genereSelezionato.value !== 'Tutti') {
-+//    return libri.value.filter((l) => l.categorie?.includes(genereSelezionato.value))
-+//   }
-+// }
  </script>
+ 
  <template>
-   <h2>Ricerca libri</h2>
-@@ -63,26 +107,37 @@ const libriFiltrati = computed(() => {
-       {{ libro.titolo }} di {{ libro.autore }} - genere: {{ libro.genere }} ({{ libro.anno }})
-     </li>
-   </ul> -->
--  <LoadingSpinner v-if="loading"/>
-+  <LoadingSpinner v-if="loading" />
-   <h3>Ricerca per genere, disponibilità, titolo o autore</h3>
--  <div class="container">
-+  <form class="form-container">
-     <input type="text" v-model="filtro" placeholder="Inserisci testo..." />
-     <div class="label">
-       <label for="disponibile">Solo disponibili</label>
- 
-       <input id="disponibile" type="checkbox" v-model="soloDisponibili" />
+   <div class="container">
+     <h1>Catalogo</h1>
++    <h2>{{ libriDisponibili }} libri disponibili su {{ totaleLibri }}</h2>
+     <div class="parent">
+       <LibroCard
+         v-for="libro in libri"
+         :key="libro.id"
+         v-bind="libro"
+         @evidenzia="evidenzia"
+-        :inEvidenza="idInEvidenza.includes(libro.id)"
++        :inEvidenza="idInEvidenza.has(libro.id)"
+         class="libro-card"
+       />
      </div>
--    <select v-model="genereSelezionato">
-+    <!-- <select v-model="genereSelezionato">
-       <option selected>Tutti</option>
--      <option v-for="libro in libri" :key="libro.id">{{ libro.genere }}</option>
--    </select>
--    <ul>
-+      <option v-for="genere in generi" :key="genere" :value="genere">{{ genere }}</option>
-+    </select> -->
-+    <CampoSelect
-+    v-model="genereSelezionato"
-+    :opzioni="generi"
-+    />
-+    <!-- <CampoSelect
-+    v-model="genereSelezionato"
-+    @change="seleziona"
-+    :opzioni="generi"
-+    /> -->
-+  </form>
-+  <!-- <ul>
-       <li v-for="libro in libriFiltrati" :key="libro.id">
-         {{ libro.titolo }} di {{ libro.autore }} ({{ libro.anno }})
-       </li>
--    </ul>
--
--    <h3>{{ libriFiltrati.length }} libri trovati su {{ libri.length }}</h3>
-+    </ul> -->
-+  <h3>{{ libriFiltrati.length }} libri trovati su {{ libri.length }}</h3>
-+  <div class="parent">
-+    <LibroCard v-for="libro in libriFiltrati" :key="libro.id" v-bind="libro"  class="libro-card"/>
-   </div>
- </template>
- 
-@@ -100,13 +155,14 @@ h3 {
-   text-align: center;
-   margin-bottom: 15px;
- }
--.container {
-+.form-container {
-   display: flex;
-   flex-direction: column;
-   align-items: center;
-   gap: 20px;
- }
--input, select {
-+input,
-+select {
-   padding: 5px;
-   border-radius: 5px;
- }
-@@ -115,4 +171,21 @@ input, select {
-   justify-content: space-between;
-   width: 130px;
- }
+diff --git a/biblioblab-vue-frontend/src/views/RicercaLibriView.vue b/biblioblab-vue-frontend/src/views/RicercaLibriView.vue
+new file mode 100644
+index 0000000..5d10939
+--- /dev/null
++++ b/biblioblab-vue-frontend/src/views/RicercaLibriView.vue
+@@ -0,0 +1,9 @@
++<script setup>
++import RicercaLibri from '@/components/RicercaLibri.vue';
 +
-+.parent {
-+  display: grid;
-+  /* grid-template-columns: repeat(6, 1fr); */
-+  /* Automatically fits as many cards as possible, minimum width 280px */
-+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-+  /* grid-template-rows: repeat(4, 1fr); */
-+  gap: 32px;
-+}
 +
-+.libro-card {
-+  /* grid-column: span 2 / span 2;
-+  grid-row: span 4 / span 4; */
-+  /* Remove explicit grid spans so they naturally flow into the auto columns */
-+  grid-column: auto;
-+  grid-row: auto;
-+}
- </style>
-diff --git a/diff.txt b/diff.txt
-index b6bc910..00b133f 100644
---- a/diff.txt
-+++ b/diff.txt
-@@ -1,635 +1,1284 @@
--diff --git a/biblioblab-vue-frontend/diff.txt b/biblioblab-vue-frontend/diff.txt
--index 77414f4..8650fd0 100644
----- a/biblioblab-vue-frontend/diff.txt
--+++ b/biblioblab-vue-frontend/diff.txt
--@@ -1,92 +1,343 @@
--+diff --git a/biblioblab-vue-frontend/src/App.vue b/biblioblab-vue-frontend/src/App.vue
--+index 512f80a..7c9522d 100644
--+--- a/biblioblab-vue-frontend/src/App.vue
--++++ b/biblioblab-vue-frontend/src/App.vue
--+@@ -1,8 +1,7 @@
--+ <script setup>
--+-import ContatoreVue from './components/ContatoreVue.vue';
--+-import ListaSpesa from './components/ListaSpesa.vue';
--+ import RicercaLibri from './components/RicercaLibri.vue';
--+ import SchedaLibro from './components/SchedaLibro.vue';
--++import CatalogoView from './view/CatalogoView.vue';
--+ 
--+ 
--+ </script>
--+@@ -10,6 +9,7 @@ import SchedaLibro from './components/SchedaLibro.vue';
--+ <template>
--+   <!-- <ContatoreVue/>
--+   <ListaSpesa /> -->
--++  <CatalogoView />
--+   <SchedaLibro />
--+   <RicercaLibri />
--+ </template>
--+diff --git a/biblioblab-vue-frontend/src/assets/libro_default.png b/biblioblab-vue-frontend/src/assets/libro_default.png
--+new file mode 100644
--+index 0000000..56ddad3
--+Binary files /dev/null and b/biblioblab-vue-frontend/src/assets/libro_default.png differ
--+diff --git a/biblioblab-vue-frontend/src/components/ContatoreVue.vue b/biblioblab-vue-frontend/src/components/ContatoreVue.vue
--+deleted file mode 100644
--+index cb9bfaf..0000000
--+--- a/biblioblab-vue-frontend/src/components/ContatoreVue.vue
--++++ /dev/null
--+@@ -1,22 +0,0 @@
--+-<template>
--+-  <h1 :class="{'rosso':count <= 0, 'verde': count > 5}">Contatore: {{ count }}</h1>
--+-  <button @click="count++"> + </button>
--+-  <button @click="count--" :disabled="count <= 0"> - </button>
--+-  <button @click="count = 0">Reset</button>
--+-</template>
--+-
--+-<script setup>
--+-import { ref } from 'vue'
--+-
--+-const count = ref(0)
--+-</script>
--+-
--+-<style scoped>
--+-.rosso {
--+-  color: red;
--+-}
--+-
--+-.verde {
--+-  color: green;
--+-}
--+-</style>
-- diff --git a/biblioblab-vue-frontend/src/components/ItemCard.vue b/biblioblab-vue-frontend/src/components/ItemCard.vue
--+deleted file mode 100644
--+index 8ff704f..0000000
--+--- a/biblioblab-vue-frontend/src/components/ItemCard.vue
--++++ /dev/null
--+@@ -1,16 +0,0 @@
--+-<template>
--+-  <div class="container">
--+-  <slot name="header"></slot>
--+-  <slot name="content"></slot>
--+-  <slot name="footer"></slot>
--+-  </div>
--+-</template>
--+-
--+-<style scoped>
--+-.container {
--+-  width: 20vw;
--+-  height: 40vh;
--+-  border: 1px solid rgb(204, 200, 200);
--+-  border-radius: 10px;
--+-}
--+-</style>
--+diff --git a/biblioblab-vue-frontend/src/components/LibroCard.vue b/biblioblab-vue-frontend/src/components/LibroCard.vue
-- new file mode 100644
---index 0000000..8ff704f
--+index 0000000..aa60ea3
-- --- /dev/null
---+++ b/biblioblab-vue-frontend/src/components/ItemCard.vue
---@@ -0,0 +1,16 @@
--++++ b/biblioblab-vue-frontend/src/components/LibroCard.vue
--+@@ -0,0 +1,114 @@
-- +<template>
-- +  <div class="container">
---+  <slot name="header"></slot>
---+  <slot name="content"></slot>
---+  <slot name="footer"></slot>
--++    <section class="cover">
--++      <img :src="copertina" :alt="titolo" />
--++    </section>
--++
--++    <section class="content">
--++      <h3>{{ titolo }}title</h3>
--++      <p><strong>Autore</strong>: {{ autore.nome }} {{ autore.cognome }}</p>
--++    </section>
--++
--++    <section class="description">
--++      <p><strong>Descrizione</strong>: {{ descrizione.slice(0, 200) }}...</p>
--++    </section>
--++    <section class="anno">
--++      <span><strong>anno</strong>: {{ anno }}</span
--++      ><span :class="disponibile ? 'green' : 'red'">{{
--++        disponibile ? 'disponibile' : 'non disponibile'
--++      }}</span>
--++    </section>
--++
--++    <section class="footer">
--++      <span>isbn: {{ isbn }} </span>
--++    </section>
-- +  </div>
-- +</template>
-- +
--++<script setup>
--++import defaultCover from '@/assets/libro_default.png'
--++
--++defineProps({
--++  titolo: String,
--++  autore: {
--++    type: Object,
--++    required: true,
--++  },
--++  isbn: {
--++    type: String,
--++    default: '000-0-0000-0000-0',
--++  },
--++  anno: Number,
--++  genere: String,
--++  disponibile: {
--++    type: Boolean,
--++    default: true,
--++  },
--++  copertina: {
--++    type: String,
--++    default: defaultCover,
--++  },
--++  descrizione: {
--++    type: String,
--++    default: `Lorem ipsum dolor sit amet,
--++     ameconsectetur adipiscing elit, sed do eiusmod tempor
--++     incididunt ut labore et dolore magna aliqua. Ut enim ad
--++     minim veniam, quis nostrud exercitation ullamco laboris nisi
--++     ut aliquip ex ea commodo consequat. Duis aute irure dolor in
--++     .`,
--++  },
--++})
--++</script>
--++
-- +<style scoped>
--++* {
--++  box-sizing: border-box;
--++  margin: 0;
--++  padding: 0;
--++  /* border: 1px solid; */
--++}
--++
-- +.container {
---+  width: 20vw;
---+  height: 40vh;
---+  border: 1px solid rgb(204, 200, 200);
---+  border-radius: 10px;
--++  width: 40vw;
--++  min-width: 200px;
--++  display: grid;
--++  grid-template-columns: repeat(2, 1fr);
--++  grid-template-rows: 1fr, 2fr, 1fr, 1fr;
--++  gap: 8px;
--++  transition: scale 0.3s ease;
--++}
--++.container:hover {
--++  scale: 1.1;
--++}
--++
--++.cover {
--++  grid-row: span 4 / span 4;
--++}
--++img {
--++  width: 100%;
--++  object-fit: contain;
--++}
--++.content {
--++  grid-column-start: 2;
--++  grid-row-start: 1;
--++}
--++.description {
--++  grid-column-start: 2;
--++  grid-row-start: 2;
--++}
--++.green {
--++  color: green;
--++}
--++.red {
--++  color: red;
--++}
--++.anno {
--++  grid-column-start: 2;
--++  grid-row-start: 3;
--++}
--++
--++.footer {
--++  grid-column-start: 2;
--++  grid-row-start: 4;
-- +}
-- +</style>
---diff --git a/biblioblab-vue-frontend/src/components/LoadingSpinner.vue b/biblioblab-vue-frontend/src/components/LoadingSpinner.vue
--+diff --git a/biblioblab-vue-frontend/src/components/ListaSpesa.vue b/biblioblab-vue-frontend/src/components/ListaSpesa.vue
--+deleted file mode 100644
--+index 4e84106..0000000
--+--- a/biblioblab-vue-frontend/src/components/ListaSpesa.vue
--++++ /dev/null
--+@@ -1,75 +0,0 @@
--+-<script setup>
--+-import { ref } from 'vue'
--+-
--+-const prodotto = ref('')
--+-const lista = ref([])
--+-
--+-const aggiungi = () => {
--+-  if (prodotto.value.trim() === '') return
--+-  lista.value.push({
--+-    id: Date.now,
--+-    nome: prodotto.value.trim(),
--+-  })
--+-  prodotto.value = ''
--+-}
--+-</script>
--+-<template>
--+-  <h2>Lista della Spesa</h2>
--+-  <div class="contenitore">
--+-  <input
--+-    type="text"
--+-    v-model="prodotto"
--+-    placeholder="inserisci prodotto..."
--+-    @keyup.enter="aggiungi"
--+-  />
--+-  <button @click="aggiungi">Aggiungi</button>
--+-  <ul>
--+-    <li v-for="(item, indice) in lista" :key="item.id">
--+-      {{ item.nome }} <button @click="lista.splice(indice, 1)" class="rimuovi">🗑️</button>
--+-    </li>
--+-  </ul>
--+-  <p v-if="lista.length > 0">Totale prodotti: {{ lista.length }}</p>
--+-  <p v-else>Nessun articolo - aggiungi qualcosa!</p>
--+-  </div>
--+-</template>
--+-
--+-<style scoped>
--+-* {
--+-  box-sizing: border-box;
--+-}
--+-h2 {
--+-  text-align: center;
--+-}
--+-.contenitore {
--+-  display: flex;
--+-  flex-direction: column;
--+-  gap: 10px;
--+-  justify-content: center;
--+-  align-items: center;
--+-}
--+-input {
--+-  display: block;
--+-  margin-top: 40px;
--+-  width: 300px;
--+-  padding: 4px;
--+-  border-radius: 4px;
--+-}
--+-button {
--+-  width: 150px;
--+-  padding: 4px;
--+-  cursor: pointer;
--+-  border-radius: 4px;
--+-}
--+-
--+-.rimuovi {
--+-  border: none;
--+-  background-color: transparent;
--+-  width: 30px;
--+-  transition: scale 0.3s ease-in-out;
--+-}
--+-
--+-.rimuovi:hover {
--+-  scale: 1.2;
--+-}
--+-
--+-</style>
--+diff --git a/biblioblab-vue-frontend/src/components/RicercaLibri.vue b/biblioblab-vue-frontend/src/components/RicercaLibri.vue
--+index 3908215..623886b 100644
--+--- a/biblioblab-vue-frontend/src/components/RicercaLibri.vue
--++++ b/biblioblab-vue-frontend/src/components/RicercaLibri.vue
--+@@ -84,7 +84,7 @@ watch(filtro,(newFiltro, oldFiltro) => {
--+     console.log({newFiltro: newFiltro, oldFiltro: oldFiltro})
--+   }
--+     loading.value = false
--+-  }, 3000)
--++  }, 300)
--+ 
--+ })
--+ 
--+diff --git a/biblioblab-vue-frontend/src/view/CatalogoView.vue b/biblioblab-vue-frontend/src/view/CatalogoView.vue
-- new file mode 100644
---index 0000000..59680a6
--+index 0000000..e576232
-- --- /dev/null
---+++ b/biblioblab-vue-frontend/src/components/LoadingSpinner.vue
---@@ -0,0 +1,24 @@
--++++ b/biblioblab-vue-frontend/src/view/CatalogoView.vue
--+@@ -0,0 +1,47 @@
--++<script setup>
--++import { ref, onMounted } from 'vue'
--++import LibroCard from '@/components/LibroCard.vue'
--++
--++const libri = ref([])
--++//Api call temporanea, da spostare nel file adatto
--++onMounted(async() => {
--++  try {
--++    const res = await fetch(`http://localhost:8000/api/libri/`, {
--++      method: 'GET',
--++      headers: {
--++        'Content-Type': 'application/json'
--++      }
--++    })
--++    if (!res.ok) {
--++      throw new Error(`Error in setTimeout fetch  ${res.statusText}`)
--++    }
--++    const data = await res.json()
--++    libri.value = data.results
--++    console.log({libri: libri.value})
--++  } catch(err) {
--++    console.error('Errore nel recupero libri', err)
--++  }
--++})
--++</script>
--++
-- +<template>
---+  <div class="spinner"></div>
--++  <div class="parent">
--++    <LibroCard
--++    v-for="libro in libri" :key="libro.id" v-bind="libro"
--++    class="libro-card" />
--++  </div>
-- +</template>
-- +
-- +<style scoped>
---+.spinner {
---+  width: 20px;
---+  height: 20px;
---+  border: 5px solid #f3f3f3;
---+  border-top: 5px solid #3498db;
---+  border-radius: 50%;
---+  animation: spin 1s linear infinite;
---+  margin: 30% auto;
--++.parent {
--++  display: grid;
--++  grid-template-columns: repeat(4, 1fr);
--++  grid-template-rows: repeat(4, 1fr);
--++  gap: 8px;
-- +}
-- +
---+@keyframes spin {
---+  0% {
---+    transform: rotate(0deg);
---+  }
---+  100% {
---+    transform: rotate(360deg);
---+  }
--++.libro-card {
--++  grid-column: span 2 / span 2;
--++  grid-row: span 4 / span 4;
-- +}
-- +</style>
---diff --git a/biblioblab-vue-frontend/src/components/RicercaLibri.vue b/biblioblab-vue-frontend/src/components/RicercaLibri.vue
---index 2b09838..5558e32 100644
------ a/biblioblab-vue-frontend/src/components/RicercaLibri.vue
---+++ b/biblioblab-vue-frontend/src/components/RicercaLibri.vue
---@@ -1,5 +1,6 @@
--- <script setup>
----import { ref, computed } from 'vue'
---+import { ref, computed, watch } from 'vue'
---+import LoadingSpinner from './LoadingSpinner.vue'
--- const libri = ref([
---   {
---     id: 1,
---@@ -54,6 +55,19 @@ const libri = ref([
--- const filtro = ref('')
--- const genereSelezionato = ref('Tutti')
--- const soloDisponibili = ref(false)
---+const loading = ref(false)
---+
---+let timeout = null
---+watch(filtro,(nuovoFiltro, vecchioFiltro) => {
---+  clearTimeout(timeout)
---+  if (filtro.value.length < 3) return
---+  loading.value = true
---+  timeout = setTimeout(() => {
---+    console.log({vecchioFiltro: vecchioFiltro, nuovoFiltro: nuovoFiltro})
---+    loading.value = false
---+  }, 3000)
---+
---+})
--- 
--- const libriFiltrati = computed(() => {
---   let result = libri.value
---@@ -80,6 +94,7 @@ const libriFiltrati = computed(() => {
---       {{ libro.titolo }} di {{ libro.autore }} - genere: {{ libro.genere }} ({{ libro.anno }})
---     </li>
---   </ul> -->
---+  <LoadingSpinner v-if="loading"/>
---   <h3>Ricerca per genere, disponibilità, titolo o autore</h3>
---   <div class="container">
---     <input type="text" v-model="filtro" placeholder="Inserisci testo..." />
-+diff --git a/biblioblab-vue-frontend/src/components/CampoSelect.vue b/biblioblab-vue-frontend/src/components/CampoSelect.vue
-+new file mode 100644
-+index 0000000..1ad0b6f
-+--- /dev/null
-++++ b/biblioblab-vue-frontend/src/components/CampoSelect.vue
-+@@ -0,0 +1,37 @@
-++<script setup>
-++//per supportare il v-model custom il componente deve:
-++//1. Accettare la prop 'modelValue'
-++//2. Emettere l'evento 'update:modelValue'
-++const props = defineProps({
-++  modelValue: {
-++    type: String,
-++     default: ''
-++    },
-++  label: {
-++    type: String,
-++     default: '',
-++    },
-++    opzioni: {
-++      type: Array,
-++      default: () => []
-++    },
-++    errore: {
-++      type: String,
-++      default: ''
-++    }
-++})
-++
-++const emit = defineEmits(['update:modelValue', 'change'])
-++
-++const onChange = (e) => {
-++  emit('update:modelValue', e.target.value)
-++}
-++</script>
-++
-++<template>
-++  <label :for="label">{{ label }}</label>
-++  <select :id='label' @change="onChange" :value='modelValue' :class="{'errore':errore}">
-++    <option v-for="opt in props.opzioni" :key=opt.value :value="opt.value">{{ opt.label }}</option>
-++  </select>
-++  <span v-if="errore" class="errore-msg">{{ errore }}</span>
-++</template>
- diff --git a/biblioblab-vue-frontend/src/components/LibroCard.vue b/biblioblab-vue-frontend/src/components/LibroCard.vue
--index aa60ea3..08f0c84 100644
-+index 1d7bd9c..223ed70 100644
- --- a/biblioblab-vue-frontend/src/components/LibroCard.vue
- +++ b/biblioblab-vue-frontend/src/components/LibroCard.vue
--@@ -1,11 +1,11 @@
-- <template>
-+@@ -2,16 +2,27 @@
-    <div class="container">
-      <section class="cover">
---      <img :src="copertina" :alt="titolo" />
--+      <img :src="cover_url" :alt="titolo" />
-+       <img :src="cover_url" :alt="titolo" />
-+-      <span class='isbn'>isbn: {{ isbn }} </span>
-++      <span class="isbn">isbn: {{ isbn }} </span>
-      </section>
-  
---    <section class="content">
---      <h3>{{ titolo }}title</h3>
--+    <section class="header">
--+      <h3>{{ titolo }}</h3>
-+     <section class="header">
-+       <h3>{{ titolo }} <span v-if="inEvidenza">⭐</span></h3>
-        <p><strong>Autore</strong>: {{ autore.nome }} {{ autore.cognome }}</p>
-++      <hr />
-++    </section>
-++
-++    <section class="genere">
-++      <ul class="genere">
-++        <strong>Genere</strong
-++        >:
-++        <li v-for="genere in categorie" :key="genere">{{ genere }}</li>
-++      </ul>
-++      <hr />
-      </section>
-  
--@@ -13,7 +13,7 @@
-+     <section class="description">
-        <p><strong>Descrizione</strong>: {{ descrizione.slice(0, 200) }}...</p>
-++      <hr />
-      </section>
-      <section class="anno">
---      <span><strong>anno</strong>: {{ anno }}</span
--+      <span><strong>pubblicato</strong>: {{ anno_pubblicazione }}</span
--       ><span :class="disponibile ? 'green' : 'red'">{{
--         disponibile ? 'disponibile' : 'non disponibile'
--       }}</span>
--@@ -26,7 +26,7 @@
-- </template>
-- 
-- <script setup>
---import defaultCover from '@/assets/libro_default.png'
--+// import defaultCover from '@/assets/libro_default.png'
-- 
-- defineProps({
--   titolo: String,
--@@ -38,15 +38,18 @@ defineProps({
--     type: String,
-+       <span><strong>pubblicato nel</strong>: {{ anno_pubblicazione }}</span
-+@@ -43,7 +54,8 @@ const props = defineProps({
-      default: '000-0-0000-0000-0',
-    },
---  anno: Number,
--+  anno_pubblicazione: Number,
--   genere: String,
-+   anno_pubblicazione: Number,
-+-  genere: String,
-++  categorie: Array,
-++  // genere: String,
-    disponibile: {
-      type: Boolean,
-      default: true,
-+@@ -66,11 +78,10 @@ const props = defineProps({
-    },
---  copertina: {
--+  cover_url: {
--     type: String,
---    default: defaultCover,
--+    default: (props) =>
--+    // `https://www.googleapis.com/books/v1/volumes?q=${props.titolo}`
--+      `https://placehold.co/300x450/e2e8f0/1e293b?text=${encodeURIComponent(props.titolo || 'Book')}`,
--+    // default: defaultCover,
--   },
--   descrizione: {
--     type: String,
--@@ -69,46 +72,107 @@ defineProps({
-+   inEvidenza: {
-+     type: Boolean,
-+-    default: false
-+-  }
-++    default: false,
-++  },
-+ })
-+ 
-+-
-+ const emit = defineEmits(['evidenzia'])
-+ 
-+ const onEvidenzia = () => emit('evidenzia', props.id)
-+@@ -84,6 +95,12 @@ const onEvidenzia = () => emit('evidenzia', props.id)
-+   /* border: 1px solid; */
-  }
-  
-++hr {
-++  width: 70%;
-++  margin: 5px auto;
-++  border-color: rgba(245, 242, 242, 0.021);
-++  box-shadow: 1px 1px 10px;
-++}
-  .container {
---  width: 40vw;
--+  width: 100%;
--+  max-width: 500px;
--   min-width: 200px;
--+  height: 100%;
--+  min-height: 250px;
--   display: grid;
---  grid-template-columns: repeat(2, 1fr);
---  grid-template-rows: 1fr, 2fr, 1fr, 1fr;
--+  /* grid-template-columns: repeat(2, 1fr);
--+  grid-template-rows: 1fr, 2fr, 1fr, 1fr; */
--+  grid-template-columns: 120px 1fr; /* Fixed width for cover, fluid for content */
--+  grid-template-rows: auto auto auto auto; /* Let rows adjust based on content size */
--   gap: 8px;
---  transition: scale 0.3s ease;
--+  transition: scale 0.2s ease;
--+  /* border: 1px solid blue; */
--+  padding: 12px;
--+  border-radius: 10px;
--+  box-shadow: 1px 1px 12px;
-- }
-- .container:hover {
---  scale: 1.1;
--+  scale: 1.02;
-+   width: 100%;
-+   max-width: 500px;
-+@@ -117,9 +134,8 @@ const onEvidenzia = () => emit('evidenzia', props.id)
-  }
-  
-- .cover {
---  grid-row: span 4 / span 4;
--+  grid-row: span 4;
--+  /* height: 100%; */
--+  display: flex;
--+  justify-content: center;
--+  align-items: center;
-+ .isbn {
-+-    font-size: 0.75rem;
-++  font-size: 0.75rem;
-+   color: #94a3b8;
-+-
-  }
-  img {
--+  height: 100%;
--   width: 100%;
---  object-fit: contain;
--+  max-height: 200px;
--+  object-fit: cover;
--+  border-radius: 10px;
--+  /* border: 1px solid blue; */
--+  box-shadow: 1px 1px 24px gray;
--+}
--+h3 {
--+  margin: 10px;
-+   height: 100%;
-+@@ -133,31 +149,28 @@ img {
-+ h3 {
-+   margin: 10px;
-  }
---.content {
--+/* .content {
--   grid-column-start: 2;
--   grid-row-start: 1;
--+} */
--+
--+.header {
--+  grid-column: 2;
--+  grid-row: 1;
-+-/* .content {
-+-  grid-column-start: 2;
-+-  grid-row-start: 1;
-+-} */
-+ 
-+ .header {
-+   grid-column: 2;
-+   grid-row: 1;
-  }
---.description {
--+
--+/* .description {
--   grid-column-start: 2;
--   grid-row-start: 2;
--+} */
--+
--+.description {
-+ 
-+-/* .description {
-+-  grid-column-start: 2;
-+-  grid-row-start: 2;
-+-} */
-++.genere {
-++  list-style: none;
- +  grid-column: 2;
- +  grid-row: 2;
--+  font-size: 0.85rem;
--+  color: #475569;
-- }
--+
--+.anno {
--+  grid-column: 2;
--+  grid-row: 3;
--+  display: flex;
--+  flex-direction: column;
--+  /* justify-content: space-between; */
--+  gap: 16px;
--+  font-size: 0.8rem;
- +}
--+
-- .green {
--   color: green;
-+ 
-+ .description {
-+   grid-column: 2;
-+-  grid-row: 2;
-++  grid-row: 3;
-+   font-size: 0.85rem;
-+   color: #475569;
-  }
-- .red {
--   color: red;
-+ 
-+ .anno {
-+   grid-column: 2;
-+-  grid-row: 3;
-++  grid-row: 4;
-+   display: flex;
-+   flex-direction: column;
-+   /* justify-content: space-between; */
-+@@ -178,6 +191,7 @@ h3 {
-+   margin: auto;
-+   border-radius: 5px;
-+   transition: background-color 0.2s ease-in-out;
-++  cursor: pointer;
-  }
---.anno {
--+/* .anno {
--   grid-column-start: 2;
--   grid-row-start: 3;
---}
--+} */
-  
---.footer {
--+/* .footer {
--   grid-column-start: 2;
--   grid-row-start: 4;
--+} */
-+ .evidenzia:hover {
-+diff --git a/biblioblab-vue-frontend/src/components/RicercaLibri.vue b/biblioblab-vue-frontend/src/components/RicercaLibri.vue
-+index 40a2484..65914cd 100644
-+--- a/biblioblab-vue-frontend/src/components/RicercaLibri.vue
-++++ b/biblioblab-vue-frontend/src/components/RicercaLibri.vue
-+@@ -1,41 +1,73 @@
-+ <script setup>
-+-import { ref, computed, watch } from 'vue'
-++import { ref, computed, watch, onMounted } from 'vue'
-+ import LoadingSpinner from './LoadingSpinner.vue'
-++import LibroCard from './LibroCard.vue'
-++import CampoSelect from './CampoSelect.vue'
-+ 
-+-
-+-const libriApi = ref([])
-+-
-++const libri = ref([])
-++// const generi = ref(['Romanzo', 'Saggio', 'Racconti', 'Classico', 'Contemporaneo'])
-+ const filtro = ref('')
-+ const genereSelezionato = ref('Tutti')
-+ const soloDisponibili = ref(false)
-+ const loading = ref(false)
-+ 
-++onMounted(async() => {
-++  try {
-++    const res = await fetch(`http://localhost:8000/api/libri/`)
-++    if (!res.ok){
-++      throw new Error('Error during the fetch for genres', Error.message)
-++    }
-++    const data = await res.json()
-++    libri.value = data.results
-++    console.log({libriData: libri.value})
-++  }catch(err){
-++    console.error('Error fetching onMounted', err)
-++  }
-++})
-++// const generi = computed(() => {
-++//   const gen = new Set();
-++//    for (const libro of libri.value) {
-++//     for (const genere of libro.categorie){
-++//       gen.add(genere)
-++//     }
-++//    }
-++//    return [...gen]
-++// })
-++
-++// Get all genres from the first onMounted fetch
-++// cleaner using flatMap() to flatten all categories in one Array
-++// then returning objects since the template expects {value, label}
-++const generi = computed(() => {
-++  const unique = [...new Set(libri.value.flatMap(l => l.categorie))];
-++  return  [{ value: 'Tutti', label: 'Tutti' }, ...unique.map(g => ({ value: g, label: g }))];
-++});
-++
-+ let timeout = null
-+-watch(filtro,(newFiltro, oldFiltro) => {
-++watch(filtro, (newFiltro, oldFiltro) => {
-+   clearTimeout(timeout)
-+   if (filtro.value.length < 3) return
-+   loading.value = true
-+-  timeout = setTimeout(async() => {
-++  timeout = setTimeout(async () => {
-+     try {
-+-    const res = await fetch(`http://localhost:8000/api/libri/`, {
-+-      method: 'GET',
-+-      headers: {
-+-        'Content-Type': 'application/json'
-++      const res = await fetch(`http://localhost:8000/api/libri/`, {
-++        method: 'GET',
-++        headers: {
-++          'Content-Type': 'application/json',
-++        },
-++      })
-++      if (!res.ok) {
-++        throw new Error('Error in setTimeout fetch', Error.message)
-+       }
-+-    })
-+-    if (!res.ok) {
-+-      throw new Error('Error in setTimeout fetch', Error.message)
-++      const data = await res.json()
-++      libri.value = data.results
-++      console.log({ libri: libri.value, results: data.results })
-++    } catch (err) {
-++      console.error('Error while fetching libri', err)
-++    } finally {
-++      console.log({ newFiltro: newFiltro, oldFiltro: oldFiltro })
-+     }
-+-    libriApi.value = await res.json()
-+-    console.log({libriApi: libriApi.value})
-+-  } catch(err) {
-+-    console.error('Error while fetching libri', err)
-+-  } finally {
-+-    console.log({newFiltro: newFiltro, oldFiltro: oldFiltro})
-+-  }
-+     loading.value = false
-+   }, 300)
-+-
-+ })
-+ 
-+ const libriFiltrati = computed(() => {
-+@@ -44,16 +76,28 @@ const libriFiltrati = computed(() => {
-+     result = libri.value.filter((l) => l.disponibile)
-+   }
-+   if (genereSelezionato.value !== 'Tutti') {
-+-    result = result.filter((l) => l.genere === genereSelezionato.value)
-++    result = result.filter((l) => l.categorie?.includes(genereSelezionato.value))
-+   }
-+ 
-+   if (!filtro.value) return result
-+-  return result.filter(
-+-    (l) =>
-+-      l.titolo.toLowerCase().includes(filtro.value) ||
-+-      l.autore.toLowerCase().includes(filtro.value),
-+-  )
- +
--+.footer {
--+  grid-column: 2;
--+  grid-row: 4;
--+  font-size: 0.75rem;
--+  color: #94a3b8;
-++
-++
-++  // return result.filter((l) => {
-++  return result.filter((l) => {
-++    const titolo = (l.titolo || '').toLowerCase()
-++    const autore = (l.autore.nome || '').toLowerCase()
-++    const search = filtro.value.toLowerCase()
-++    console.log({ resultfiler: titolo.includes(search) || autore.includes(search)})
-++    return titolo.includes(search) || autore.includes(search)
-++  })
-+ })
-++
-++// const seleziona = () => {
-++//   if (genereSelezionato.value !== 'Tutti') {
-++//    return libri.value.filter((l) => l.categorie?.includes(genereSelezionato.value))
-++//   }
-++// }
-+ </script>
-+ <template>
-+   <h2>Ricerca libri</h2>
-+@@ -63,26 +107,37 @@ const libriFiltrati = computed(() => {
-+       {{ libro.titolo }} di {{ libro.autore }} - genere: {{ libro.genere }} ({{ libro.anno }})
-+     </li>
-+   </ul> -->
-+-  <LoadingSpinner v-if="loading"/>
-++  <LoadingSpinner v-if="loading" />
-+   <h3>Ricerca per genere, disponibilità, titolo o autore</h3>
-+-  <div class="container">
-++  <form class="form-container">
-+     <input type="text" v-model="filtro" placeholder="Inserisci testo..." />
-+     <div class="label">
-+       <label for="disponibile">Solo disponibili</label>
-+ 
-+       <input id="disponibile" type="checkbox" v-model="soloDisponibili" />
-+     </div>
-+-    <select v-model="genereSelezionato">
-++    <!-- <select v-model="genereSelezionato">
-+       <option selected>Tutti</option>
-+-      <option v-for="libro in libri" :key="libro.id">{{ libro.genere }}</option>
-+-    </select>
-+-    <ul>
-++      <option v-for="genere in generi" :key="genere" :value="genere">{{ genere }}</option>
-++    </select> -->
-++    <CampoSelect
-++    v-model="genereSelezionato"
-++    :opzioni="generi"
-++    />
-++    <!-- <CampoSelect
-++    v-model="genereSelezionato"
-++    @change="seleziona"
-++    :opzioni="generi"
-++    /> -->
-++  </form>
-++  <!-- <ul>
-+       <li v-for="libro in libriFiltrati" :key="libro.id">
-+         {{ libro.titolo }} di {{ libro.autore }} ({{ libro.anno }})
-+       </li>
-+-    </ul>
-+-
-+-    <h3>{{ libriFiltrati.length }} libri trovati su {{ libri.length }}</h3>
-++    </ul> -->
-++  <h3>{{ libriFiltrati.length }} libri trovati su {{ libri.length }}</h3>
-++  <div class="parent">
-++    <LibroCard v-for="libro in libriFiltrati" :key="libro.id" v-bind="libro"  class="libro-card"/>
-+   </div>
-+ </template>
-+ 
-+@@ -100,13 +155,14 @@ h3 {
-+   text-align: center;
-+   margin-bottom: 15px;
-+ }
-+-.container {
-++.form-container {
-+   display: flex;
-+   flex-direction: column;
-+   align-items: center;
-+   gap: 20px;
-+ }
-+-input, select {
-++input,
-++select {
-+   padding: 5px;
-+   border-radius: 5px;
-+ }
-+@@ -115,4 +171,21 @@ input, select {
-+   justify-content: space-between;
-+   width: 130px;
-  }
- +
--+/* @media screen and (max-width: 1200px) {
--+  .container {
--+    display: grid;
--+    grid-template-columns: repeat(2, 1fr);
--+    grid-template-rows: repeat(4, 1fr);
--+    gap: 32px;
--+  }
--+} */
-- </style>
--diff --git a/biblioblab-vue-frontend/src/view/CatalogoView.vue b/biblioblab-vue-frontend/src/view/CatalogoView.vue
--index e576232..ce7e3f4 100644
----- a/biblioblab-vue-frontend/src/view/CatalogoView.vue
--+++ b/biblioblab-vue-frontend/src/view/CatalogoView.vue
--@@ -35,13 +35,28 @@ onMounted(async() => {
-- <style scoped>
-- .parent {
--   display: grid;
---  grid-template-columns: repeat(4, 1fr);
---  grid-template-rows: repeat(4, 1fr);
---  gap: 8px;
-++.parent {
-++  display: grid;
- +  /* grid-template-columns: repeat(6, 1fr); */
- +  /* Automatically fits as many cards as possible, minimum width 280px */
- +  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
- +  /* grid-template-rows: repeat(4, 1fr); */
- +  gap: 32px;
-++}
- +
-- }
-- 
-- .libro-card {
---  grid-column: span 2 / span 2;
---  grid-row: span 4 / span 4;
-++.libro-card {
- +  /* grid-column: span 2 / span 2;
- +  grid-row: span 4 / span 4; */
- +  /* Remove explicit grid spans so they naturally flow into the auto columns */
- +  grid-column: auto;
- +  grid-row: auto;
- +}
--+
--+/* @media screen and (max-width: 1200px) {
--+ .parent {
--+  display: grid;
--+  grid-template-columns: repeat(4, 1fr);
--+  grid-template-rows: repeat(4, 1fr);
--+  gap: 32px;
-- }
--+} */
-  </style>
-+diff --git a/diff.txt b/diff.txt
-+index b6bc910..ee95657 100644
-+--- a/diff.txt
-++++ b/diff.txt
-+@@ -1,635 +1,301 @@
-+-diff --git a/biblioblab-vue-frontend/diff.txt b/biblioblab-vue-frontend/diff.txt
-+-index 77414f4..8650fd0 100644
-+---- a/biblioblab-vue-frontend/diff.txt
-+-+++ b/biblioblab-vue-frontend/diff.txt
-+-@@ -1,92 +1,343 @@
-+-+diff --git a/biblioblab-vue-frontend/src/App.vue b/biblioblab-vue-frontend/src/App.vue
-+-+index 512f80a..7c9522d 100644
-+-+--- a/biblioblab-vue-frontend/src/App.vue
-+-++++ b/biblioblab-vue-frontend/src/App.vue
-+-+@@ -1,8 +1,7 @@
-+-+ <script setup>
-+-+-import ContatoreVue from './components/ContatoreVue.vue';
-+-+-import ListaSpesa from './components/ListaSpesa.vue';
-+-+ import RicercaLibri from './components/RicercaLibri.vue';
-+-+ import SchedaLibro from './components/SchedaLibro.vue';
-+-++import CatalogoView from './view/CatalogoView.vue';
-+-+ 
-+-+ 
-+-+ </script>
-+-+@@ -10,6 +9,7 @@ import SchedaLibro from './components/SchedaLibro.vue';
-+-+ <template>
-+-+   <!-- <ContatoreVue/>
-+-+   <ListaSpesa /> -->
-+-++  <CatalogoView />
-+-+   <SchedaLibro />
-+-+   <RicercaLibri />
-+-+ </template>
-+-+diff --git a/biblioblab-vue-frontend/src/assets/libro_default.png b/biblioblab-vue-frontend/src/assets/libro_default.png
-+-+new file mode 100644
-+-+index 0000000..56ddad3
-+-+Binary files /dev/null and b/biblioblab-vue-frontend/src/assets/libro_default.png differ
-+-+diff --git a/biblioblab-vue-frontend/src/components/ContatoreVue.vue b/biblioblab-vue-frontend/src/components/ContatoreVue.vue
-+-+deleted file mode 100644
-+-+index cb9bfaf..0000000
-+-+--- a/biblioblab-vue-frontend/src/components/ContatoreVue.vue
-+-++++ /dev/null
-+-+@@ -1,22 +0,0 @@
-+-+-<template>
-+-+-  <h1 :class="{'rosso':count <= 0, 'verde': count > 5}">Contatore: {{ count }}</h1>
-+-+-  <button @click="count++"> + </button>
-+-+-  <button @click="count--" :disabled="count <= 0"> - </button>
-+-+-  <button @click="count = 0">Reset</button>
-+-+-</template>
-+-+-
-+-+-<script setup>
-+-+-import { ref } from 'vue'
-+-+-
-+-+-const count = ref(0)
-+-+-</script>
-+-+-
-+-+-<style scoped>
-+-+-.rosso {
-+-+-  color: red;
-+-+-}
-+-+-
-+-+-.verde {
-+-+-  color: green;
-+-+-}
-+-+-</style>
-+- diff --git a/biblioblab-vue-frontend/src/components/ItemCard.vue b/biblioblab-vue-frontend/src/components/ItemCard.vue
-+-+deleted file mode 100644
-+-+index 8ff704f..0000000
-+-+--- a/biblioblab-vue-frontend/src/components/ItemCard.vue
-+-++++ /dev/null
-+-+@@ -1,16 +0,0 @@
-+-+-<template>
-+-+-  <div class="container">
-+-+-  <slot name="header"></slot>
-+-+-  <slot name="content"></slot>
-+-+-  <slot name="footer"></slot>
-+-+-  </div>
-+-+-</template>
-+-+-
-+-+-<style scoped>
-+-+-.container {
-+-+-  width: 20vw;
-+-+-  height: 40vh;
-+-+-  border: 1px solid rgb(204, 200, 200);
-+-+-  border-radius: 10px;
-+-+-}
-+-+-</style>
-+-+diff --git a/biblioblab-vue-frontend/src/components/LibroCard.vue b/biblioblab-vue-frontend/src/components/LibroCard.vue
-+- new file mode 100644
-+--index 0000000..8ff704f
-+-+index 0000000..aa60ea3
-+- --- /dev/null
-+--+++ b/biblioblab-vue-frontend/src/components/ItemCard.vue
-+--@@ -0,0 +1,16 @@
-+-++++ b/biblioblab-vue-frontend/src/components/LibroCard.vue
-+-+@@ -0,0 +1,114 @@
-+- +<template>
-+- +  <div class="container">
-+--+  <slot name="header"></slot>
-+--+  <slot name="content"></slot>
-+--+  <slot name="footer"></slot>
-+-++    <section class="cover">
-+-++      <img :src="copertina" :alt="titolo" />
-+-++    </section>
-+-++
-+-++    <section class="content">
-+-++      <h3>{{ titolo }}title</h3>
-+-++      <p><strong>Autore</strong>: {{ autore.nome }} {{ autore.cognome }}</p>
-+-++    </section>
-+-++
-+-++    <section class="description">
-+-++      <p><strong>Descrizione</strong>: {{ descrizione.slice(0, 200) }}...</p>
-+-++    </section>
-+-++    <section class="anno">
-+-++      <span><strong>anno</strong>: {{ anno }}</span
-+-++      ><span :class="disponibile ? 'green' : 'red'">{{
-+-++        disponibile ? 'disponibile' : 'non disponibile'
-+-++      }}</span>
-+-++    </section>
-+-++
-+-++    <section class="footer">
-+-++      <span>isbn: {{ isbn }} </span>
-+-++    </section>
-+- +  </div>
-+- +</template>
-+- +
-+-++<script setup>
-+-++import defaultCover from '@/assets/libro_default.png'
-+-++
-+-++defineProps({
-+-++  titolo: String,
-+-++  autore: {
-+-++    type: Object,
-+-++    required: true,
-+-++  },
-+-++  isbn: {
-+-++    type: String,
-+-++    default: '000-0-0000-0000-0',
-+-++  },
-+-++  anno: Number,
-+-++  genere: String,
-+-++  disponibile: {
-+-++    type: Boolean,
-+-++    default: true,
-+-++  },
-+-++  copertina: {
-+-++    type: String,
-+-++    default: defaultCover,
-+-++  },
-+-++  descrizione: {
-+-++    type: String,
-+-++    default: `Lorem ipsum dolor sit amet,
-+-++     ameconsectetur adipiscing elit, sed do eiusmod tempor
-+-++     incididunt ut labore et dolore magna aliqua. Ut enim ad
-+-++     minim veniam, quis nostrud exercitation ullamco laboris nisi
-+-++     ut aliquip ex ea commodo consequat. Duis aute irure dolor in
-+-++     .`,
-+-++  },
-+-++})
-+-++</script>
-+-++
-+- +<style scoped>
-+-++* {
-+-++  box-sizing: border-box;
-+-++  margin: 0;
-+-++  padding: 0;
-+-++  /* border: 1px solid; */
-+-++}
-+-++
-+- +.container {
-+--+  width: 20vw;
-+--+  height: 40vh;
-+--+  border: 1px solid rgb(204, 200, 200);
-+--+  border-radius: 10px;
-+-++  width: 40vw;
-+-++  min-width: 200px;
-+-++  display: grid;
-+-++  grid-template-columns: repeat(2, 1fr);
-+-++  grid-template-rows: 1fr, 2fr, 1fr, 1fr;
-+-++  gap: 8px;
-+-++  transition: scale 0.3s ease;
-+-++}
-+-++.container:hover {
-+-++  scale: 1.1;
-+-++}
-+-++
-+-++.cover {
-+-++  grid-row: span 4 / span 4;
-+-++}
-+-++img {
-+-++  width: 100%;
-+-++  object-fit: contain;
-+-++}
-+-++.content {
-+-++  grid-column-start: 2;
-+-++  grid-row-start: 1;
-+-++}
-+-++.description {
-+-++  grid-column-start: 2;
-+-++  grid-row-start: 2;
-+-++}
-+-++.green {
-+-++  color: green;
-+-++}
-+-++.red {
-+-++  color: red;
-+-++}
-+-++.anno {
-+-++  grid-column-start: 2;
-+-++  grid-row-start: 3;
-+-++}
-+-++
-+-++.footer {
-+-++  grid-column-start: 2;
-+-++  grid-row-start: 4;
-+- +}
-+- +</style>
-+--diff --git a/biblioblab-vue-frontend/src/components/LoadingSpinner.vue b/biblioblab-vue-frontend/src/components/LoadingSpinner.vue
-+-+diff --git a/biblioblab-vue-frontend/src/components/ListaSpesa.vue b/biblioblab-vue-frontend/src/components/ListaSpesa.vue
-+-+deleted file mode 100644
-+-+index 4e84106..0000000
-+-+--- a/biblioblab-vue-frontend/src/components/ListaSpesa.vue
-+-++++ /dev/null
-+-+@@ -1,75 +0,0 @@
-+-+-<script setup>
-+-+-import { ref } from 'vue'
-+-+-
-+-+-const prodotto = ref('')
-+-+-const lista = ref([])
-+-+-
-+-+-const aggiungi = () => {
-+-+-  if (prodotto.value.trim() === '') return
-+-+-  lista.value.push({
-+-+-    id: Date.now,
-+-+-    nome: prodotto.value.trim(),
-+-+-  })
-+-+-  prodotto.value = ''
-+-+-}
-+-+-</script>
-+-+-<template>
-+-+-  <h2>Lista della Spesa</h2>
-+-+-  <div class="contenitore">
-+-+-  <input
-+-+-    type="text"
-+-+-    v-model="prodotto"
-+-+-    placeholder="inserisci prodotto..."
-+-+-    @keyup.enter="aggiungi"
-+-+-  />
-+-+-  <button @click="aggiungi">Aggiungi</button>
-+-+-  <ul>
-+-+-    <li v-for="(item, indice) in lista" :key="item.id">
-+-+-      {{ item.nome }} <button @click="lista.splice(indice, 1)" class="rimuovi">🗑️</button>
-+-+-    </li>
-+-+-  </ul>
-+-+-  <p v-if="lista.length > 0">Totale prodotti: {{ lista.length }}</p>
-+-+-  <p v-else>Nessun articolo - aggiungi qualcosa!</p>
-+-+-  </div>
-+-+-</template>
-+-+-
-+-+-<style scoped>
-+-+-* {
-+-+-  box-sizing: border-box;
-+-+-}
-+-+-h2 {
-+-+-  text-align: center;
-+-+-}
-+-+-.contenitore {
-+-+-  display: flex;
-+-+-  flex-direction: column;
-+-+-  gap: 10px;
-+-+-  justify-content: center;
-+-+-  align-items: center;
-+-+-}
-+-+-input {
-+-+-  display: block;
-+-+-  margin-top: 40px;
-+-+-  width: 300px;
-+-+-  padding: 4px;
-+-+-  border-radius: 4px;
-+-+-}
-+-+-button {
-+-+-  width: 150px;
-+-+-  padding: 4px;
-+-+-  cursor: pointer;
-+-+-  border-radius: 4px;
-+-+-}
-+-+-
-+-+-.rimuovi {
-+-+-  border: none;
-+-+-  background-color: transparent;
-+-+-  width: 30px;
-+-+-  transition: scale 0.3s ease-in-out;
-+-+-}
-+-+-
-+-+-.rimuovi:hover {
-+-+-  scale: 1.2;
-+-+-}
-+-+-
-+-+-</style>
-+-+diff --git a/biblioblab-vue-frontend/src/components/RicercaLibri.vue b/biblioblab-vue-frontend/src/components/RicercaLibri.vue
-+-+index 3908215..623886b 100644
-+-+--- a/biblioblab-vue-frontend/src/components/RicercaLibri.vue
-+-++++ b/biblioblab-vue-frontend/src/components/RicercaLibri.vue
-+-+@@ -84,7 +84,7 @@ watch(filtro,(newFiltro, oldFiltro) => {
-+-+     console.log({newFiltro: newFiltro, oldFiltro: oldFiltro})
-+-+   }
-+-+     loading.value = false
-+-+-  }, 3000)
-+-++  }, 300)
-+-+ 
-+-+ })
-+-+ 
-+-+diff --git a/biblioblab-vue-frontend/src/view/CatalogoView.vue b/biblioblab-vue-frontend/src/view/CatalogoView.vue
-+- new file mode 100644
-+--index 0000000..59680a6
-+-+index 0000000..e576232
-+- --- /dev/null
-+--+++ b/biblioblab-vue-frontend/src/components/LoadingSpinner.vue
-+--@@ -0,0 +1,24 @@
-+-++++ b/biblioblab-vue-frontend/src/view/CatalogoView.vue
-+-+@@ -0,0 +1,47 @@
-+-++<script setup>
-+-++import { ref, onMounted } from 'vue'
-+-++import LibroCard from '@/components/LibroCard.vue'
-+-++
-+-++const libri = ref([])
-+-++//Api call temporanea, da spostare nel file adatto
-+-++onMounted(async() => {
-+-++  try {
-+-++    const res = await fetch(`http://localhost:8000/api/libri/`, {
-+-++      method: 'GET',
-+-++      headers: {
-+-++        'Content-Type': 'application/json'
-+-++      }
-+-++    })
-+-++    if (!res.ok) {
-+-++      throw new Error(`Error in setTimeout fetch  ${res.statusText}`)
-+-++    }
-+-++    const data = await res.json()
-+-++    libri.value = data.results
-+-++    console.log({libri: libri.value})
-+-++  } catch(err) {
-+-++    console.error('Errore nel recupero libri', err)
-+-++  }
-+-++})
-+-++</script>
-+-++
-+- +<template>
-+--+  <div class="spinner"></div>
-+-++  <div class="parent">
-+-++    <LibroCard
-+-++    v-for="libro in libri" :key="libro.id" v-bind="libro"
-+-++    class="libro-card" />
-+-++  </div>
-+- +</template>
-+- +
-+- +<style scoped>
-+--+.spinner {
-+--+  width: 20px;
-+--+  height: 20px;
-+--+  border: 5px solid #f3f3f3;
-+--+  border-top: 5px solid #3498db;
-+--+  border-radius: 50%;
-+--+  animation: spin 1s linear infinite;
-+--+  margin: 30% auto;
-+-++.parent {
-+-++  display: grid;
-+-++  grid-template-columns: repeat(4, 1fr);
-+-++  grid-template-rows: repeat(4, 1fr);
-+-++  gap: 8px;
-+- +}
-+- +
-+--+@keyframes spin {
-+--+  0% {
-+--+    transform: rotate(0deg);
-+--+  }
-+--+  100% {
-+--+    transform: rotate(360deg);
-+--+  }
-+-++.libro-card {
-+-++  grid-column: span 2 / span 2;
-+-++  grid-row: span 4 / span 4;
-+- +}
-+- +</style>
-+--diff --git a/biblioblab-vue-frontend/src/components/RicercaLibri.vue b/biblioblab-vue-frontend/src/components/RicercaLibri.vue
-+--index 2b09838..5558e32 100644
-+----- a/biblioblab-vue-frontend/src/components/RicercaLibri.vue
-+--+++ b/biblioblab-vue-frontend/src/components/RicercaLibri.vue
-+--@@ -1,5 +1,6 @@
-+-- <script setup>
-+---import { ref, computed } from 'vue'
-+--+import { ref, computed, watch } from 'vue'
-+--+import LoadingSpinner from './LoadingSpinner.vue'
-+-- const libri = ref([
-+--   {
-+--     id: 1,
-+--@@ -54,6 +55,19 @@ const libri = ref([
-+-- const filtro = ref('')
-+-- const genereSelezionato = ref('Tutti')
-+-- const soloDisponibili = ref(false)
-+--+const loading = ref(false)
-+--+
-+--+let timeout = null
-+--+watch(filtro,(nuovoFiltro, vecchioFiltro) => {
-+--+  clearTimeout(timeout)
-+--+  if (filtro.value.length < 3) return
-+--+  loading.value = true
-+--+  timeout = setTimeout(() => {
-+--+    console.log({vecchioFiltro: vecchioFiltro, nuovoFiltro: nuovoFiltro})
-+--+    loading.value = false
-+--+  }, 3000)
-+--+
-+--+})
-+-- 
-+-- const libriFiltrati = computed(() => {
-+--   let result = libri.value
-+--@@ -80,6 +94,7 @@ const libriFiltrati = computed(() => {
-+--       {{ libro.titolo }} di {{ libro.autore }} - genere: {{ libro.genere }} ({{ libro.anno }})
-+--     </li>
-+--   </ul> -->
-+--+  <LoadingSpinner v-if="loading"/>
-+--   <h3>Ricerca per genere, disponibilità, titolo o autore</h3>
-+--   <div class="container">
-+--     <input type="text" v-model="filtro" placeholder="Inserisci testo..." />
-+ diff --git a/biblioblab-vue-frontend/src/components/LibroCard.vue b/biblioblab-vue-frontend/src/components/LibroCard.vue
-+-index aa60ea3..08f0c84 100644
-++index ff70682..1d7bd9c 100644
-+ --- a/biblioblab-vue-frontend/src/components/LibroCard.vue
-+ +++ b/biblioblab-vue-frontend/src/components/LibroCard.vue
-+-@@ -1,11 +1,11 @@
-+- <template>
-++@@ -2,10 +2,11 @@
-+    <div class="container">
-+      <section class="cover">
-+--      <img :src="copertina" :alt="titolo" />
-+-+      <img :src="cover_url" :alt="titolo" />
-++       <img :src="cover_url" :alt="titolo" />
-+++      <span class='isbn'>isbn: {{ isbn }} </span>
-+      </section>
-+  
-+--    <section class="content">
-+--      <h3>{{ titolo }}title</h3>
-+-+    <section class="header">
-+-+      <h3>{{ titolo }}</h3>
-++     <section class="header">
-++-      <h3>{{ titolo }}</h3>
-+++      <h3>{{ titolo }} <span v-if="inEvidenza">⭐</span></h3>
-+        <p><strong>Autore</strong>: {{ autore.nome }} {{ autore.cognome }}</p>
-+      </section>
-+  
-+-@@ -13,7 +13,7 @@
-++@@ -13,22 +14,25 @@
-+        <p><strong>Descrizione</strong>: {{ descrizione.slice(0, 200) }}...</p>
-+      </section>
-+      <section class="anno">
-+--      <span><strong>anno</strong>: {{ anno }}</span
-+-+      <span><strong>pubblicato</strong>: {{ anno_pubblicazione }}</span
-++-      <span><strong>pubblicato</strong>: {{ anno_pubblicazione }}</span
-+++      <span><strong>pubblicato nel</strong>: {{ anno_pubblicazione }}</span
-+        ><span :class="disponibile ? 'green' : 'red'">{{
-+          disponibile ? 'disponibile' : 'non disponibile'
-+        }}</span>
-+-@@ -26,7 +26,7 @@
-+++      <button @click="onEvidenzia(id)" class="evidenzia">Evidenzia ⭐</button>
-++     </section>
-++ 
-++     <section class="footer">
-++-      <span>isbn: {{ isbn }} </span>
-+++      <!-- <span>isbn: {{ isbn }} </span> -->
-++     </section>
-++   </div>
-+  </template>
-+  
-+  <script setup>
-+--import defaultCover from '@/assets/libro_default.png'
-+-+// import defaultCover from '@/assets/libro_default.png'
-+++// import { emit } from 'vue'
-++ // import defaultCover from '@/assets/libro_default.png'
-+  
-+- defineProps({
-++-defineProps({
-+++const props = defineProps({
-+++  id: Number,
-+    titolo: String,
-+-@@ -38,15 +38,18 @@ defineProps({
-++   autore: {
-++     type: Object,
-++@@ -47,7 +51,7 @@ defineProps({
-++   cover_url: {
-+      type: String,
-+-     default: '000-0-0000-0000-0',
-++     default: (props) =>
-++-    // `https://www.googleapis.com/books/v1/volumes?q=${props.titolo}`
-+++      // `https://www.googleapis.com/books/v1/volumes?q=${props.titolo}`
-++       `https://placehold.co/300x450/e2e8f0/1e293b?text=${encodeURIComponent(props.titolo || 'Book')}`,
-++     // default: defaultCover,
-+    },
-+--  anno: Number,
-+-+  anno_pubblicazione: Number,
-+-   genere: String,
-+-   disponibile: {
-+-     type: Boolean,
-+-     default: true,
-++@@ -60,7 +64,16 @@ defineProps({
-++      ut aliquip ex ea commodo consequat. Duis aute irure dolor in
-++      .`,
-+    },
-+--  copertina: {
-+-+  cover_url: {
-+-     type: String,
-+--    default: defaultCover,
-+-+    default: (props) =>
-+-+    // `https://www.googleapis.com/books/v1/volumes?q=${props.titolo}`
-+-+      `https://placehold.co/300x450/e2e8f0/1e293b?text=${encodeURIComponent(props.titolo || 'Book')}`,
-+-+    // default: defaultCover,
-+-   },
-+-   descrizione: {
-+-     type: String,
-+-@@ -69,46 +72,107 @@ defineProps({
-+- }
-+- 
-+- .container {
-+--  width: 40vw;
-+-+  width: 100%;
-+-+  max-width: 500px;
-+-   min-width: 200px;
-+-+  height: 100%;
-+-+  min-height: 250px;
-+-   display: grid;
-+--  grid-template-columns: repeat(2, 1fr);
-+--  grid-template-rows: 1fr, 2fr, 1fr, 1fr;
-+-+  /* grid-template-columns: repeat(2, 1fr);
-+-+  grid-template-rows: 1fr, 2fr, 1fr, 1fr; */
-+-+  grid-template-columns: 120px 1fr; /* Fixed width for cover, fluid for content */
-+-+  grid-template-rows: auto auto auto auto; /* Let rows adjust based on content size */
-+-   gap: 8px;
-+--  transition: scale 0.3s ease;
-+-+  transition: scale 0.2s ease;
-+-+  /* border: 1px solid blue; */
-+-+  padding: 12px;
-+-+  border-radius: 10px;
-+-+  box-shadow: 1px 1px 12px;
-+- }
-+- .container:hover {
-+--  scale: 1.1;
-+-+  scale: 1.02;
-+- }
-+- 
-+- .cover {
-+--  grid-row: span 4 / span 4;
-+-+  grid-row: span 4;
-+-+  /* height: 100%; */
-+-+  display: flex;
-+-+  justify-content: center;
-+-+  align-items: center;
-+- }
-+- img {
-+-+  height: 100%;
-+-   width: 100%;
-+--  object-fit: contain;
-+-+  max-height: 200px;
-+-+  object-fit: cover;
-+-+  border-radius: 10px;
-+-+  /* border: 1px solid blue; */
-+-+  box-shadow: 1px 1px 24px gray;
-+-+}
-+-+h3 {
-+-+  margin: 10px;
-+- }
-+--.content {
-+-+/* .content {
-+-   grid-column-start: 2;
-+-   grid-row-start: 1;
-+-+} */
-+++  inEvidenza: {
-+++    type: Boolean,
-+++    default: false
-+++  }
-++ })
-+ +
-+-+.header {
-+-+  grid-column: 2;
-+-+  grid-row: 1;
-+- }
-+--.description {
-+ +
-+-+/* .description {
-+-   grid-column-start: 2;
-+-   grid-row-start: 2;
-+-+} */
-+++const emit = defineEmits(['evidenzia'])
-+ +
-+-+.description {
-+-+  grid-column: 2;
-+-+  grid-row: 2;
-+-+  font-size: 0.85rem;
-+-+  color: #475569;
-+++const onEvidenzia = () => emit('evidenzia', props.id)
-++ </script>
-++ 
-++ <style scoped>
-++@@ -88,6 +101,7 @@ defineProps({
-++   padding: 12px;
-++   border-radius: 10px;
-++   box-shadow: 1px 1px 12px;
-+++  background-color: #ffffff;
-+  }
-+-+
-+-+.anno {
-+-+  grid-column: 2;
-+-+  grid-row: 3;
-+-+  display: flex;
-++ .container:hover {
-++   scale: 1.02;
-++@@ -97,15 +111,22 @@ defineProps({
-++   grid-row: span 4;
-++   /* height: 100%; */
-++   display: flex;
-++-  justify-content: center;
-+++  justify-content: space-evenly;
-++   align-items: center;
-+ +  flex-direction: column;
-+-+  /* justify-content: space-between; */
-+-+  gap: 16px;
-+-+  font-size: 0.8rem;
-+ +}
-+ +
-+- .green {
-+-   color: green;
-+++.isbn {
-+++    font-size: 0.75rem;
-+++  color: #94a3b8;
-+++
-++ }
-++ img {
-++   height: 100%;
-++   width: 100%;
-++   max-height: 200px;
-++   object-fit: cover;
-++-  border-radius: 2px 5px 5px 2px ;
-+++  border-radius: 2px 5px 5px 2px;
-++   /* border: 1px solid blue; */
-++   box-shadow: 1px 1px 24px gray;
-+  }
-++@@ -150,29 +171,16 @@ h3 {
-+  .red {
-+    color: red;
-+  }
-+--.anno {
-+-+/* .anno {
-+-   grid-column-start: 2;
-+-   grid-row-start: 3;
-+--}
-+-+} */
-++-/* .anno {
-++-  grid-column-start: 2;
-++-  grid-row-start: 3;
-++-} */
-++-
-++-/* .footer {
-++-  grid-column-start: 2;
-++-  grid-row-start: 4;
-++-} */
-+  
-+ -.footer {
-+-+/* .footer {
-+-   grid-column-start: 2;
-+-   grid-row-start: 4;
-+-+} */
-+-+
-+-+.footer {
-+-+  grid-column: 2;
-+-+  grid-row: 4;
-+-+  font-size: 0.75rem;
-+-+  color: #94a3b8;
-++-  grid-column: 2;
-++-  grid-row: 4;
-++-  font-size: 0.75rem;
-++-  color: #94a3b8;
-+++.evidenzia {
-+++  padding: 5px;
-+++  width: 80%;
-+++  margin: auto;
-+++  border-radius: 5px;
-+++  transition: background-color 0.2s ease-in-out;
-+  }
-+-+
-+-+/* @media screen and (max-width: 1200px) {
-+-+  .container {
-+-+    display: grid;
-+-+    grid-template-columns: repeat(2, 1fr);
-+-+    grid-template-rows: repeat(4, 1fr);
-+-+    gap: 32px;
-+-+  }
-+-+} */
-++ 
-++-/* @media screen and (max-width: 1200px) {
-++-  .container {
-++-    display: grid;
-++-    grid-template-columns: repeat(2, 1fr);
-++-    grid-template-rows: repeat(4, 1fr);
-++-    gap: 32px;
-++-  }
-++-} */
-+++.evidenzia:hover {
-+++  background-color: rgb(202, 211, 211);
-+++}
-+  </style>
-++diff --git a/biblioblab-vue-frontend/src/components/RicercaLibri.vue b/biblioblab-vue-frontend/src/components/RicercaLibri.vue
-++index 623886b..40a2484 100644
-++--- a/biblioblab-vue-frontend/src/components/RicercaLibri.vue
-+++++ b/biblioblab-vue-frontend/src/components/RicercaLibri.vue
-++@@ -2,56 +2,6 @@
-++ import { ref, computed, watch } from 'vue'
-++ import LoadingSpinner from './LoadingSpinner.vue'
-++ 
-++-const libri = ref([
-++-  {
-++-    id: 1,
-++-    titolo: 'Il Nome della Rosa',
-++-    autore: 'Umberto Eco',
-++-    anno: 1980,
-++-    genere: 'Giallo storico',
-++-    disponibile: true,
-++-  },
-++-  {
-++-    id: 2,
-++-    titolo: '1984',
-++-    autore: 'George Orwell',
-++-    anno: 1949,
-++-    genere: 'Fantascienza distopica',
-++-    disponibile: false,
-++-  },
-++-  {
-++-    id: 3,
-++-    titolo: 'Il Signore degli Anelli',
-++-    autore: 'J.R.R. Tolkien',
-++-    anno: 1954,
-++-    genere: 'Fantasy',
-++-    disponibile: true,
-++-  },
-++-  {
-++-    id: 4,
-++-    titolo: 'Orgoglio e Pregiudizio',
-++-    autore: 'Jane Austen',
-++-    anno: 1813,
-++-    genere: 'Romanzo rosa',
-++-    disponibile: true,
-++-  },
-++-  {
-++-    id: 5,
-++-    titolo: 'Il Giovane Holden',
-++-    autore: 'J.D. Salinger',
-++-    anno: 1951,
-++-    genere: 'Romanzo di formazione',
-++-    disponibile: false,
-++-  },
-++-  {
-++-    id: 6,
-++-    titolo: "Cent'anni di Solitudine",
-++-    autore: 'Gabriel García Márquez',
-++-    anno: 1967,
-++-    genere: 'Realismo magico',
-++-    disponibile: true,
-++-  },
-++-])
-++ 
-++ const libriApi = ref([])
-++ 
-+ diff --git a/biblioblab-vue-frontend/src/view/CatalogoView.vue b/biblioblab-vue-frontend/src/view/CatalogoView.vue
-+-index e576232..ce7e3f4 100644
-++index d63048a..819a61a 100644
-+ --- a/biblioblab-vue-frontend/src/view/CatalogoView.vue
-+ +++ b/biblioblab-vue-frontend/src/view/CatalogoView.vue
-+-@@ -35,13 +35,28 @@ onMounted(async() => {
-++@@ -1,42 +1,70 @@
-++ <script setup>
-++-import { ref, onMounted } from 'vue'
-+++import { ref, onMounted, computed } from 'vue'
-++ import LibroCard from '@/components/LibroCard.vue'
-++ 
-++ const libri = ref([])
-+++const idInEvidenza = ref([])
-+++
-+++const evidenzia = (id) => {
-+++  const index = idInEvidenza.value.indexOf(id)
-+++  if (index !== -1) {
-+++    idInEvidenza.value.splice(index, 1)
-+++    console.log({ idInEvidenza: idInEvidenza.value })
-+++  } else {
-+++    idInEvidenza.value.push(id)
-+++    console.log({ idInEvidenza: idInEvidenza.value })
-+++  }
-+++}
-+++
-+++const inEvidenza = computed(() => {
-+++  console.log({ inEvidenza: inEvidenza })
-+++  return (id) => idInEvidenza.value.has(id)
-+++})
-+++
-++ //Api call temporanea, da spostare nel file adatto
-++-onMounted(async() => {
-+++onMounted(async () => {
-++   try {
-++     const res = await fetch(`http://localhost:8000/api/libri/`, {
-++       method: 'GET',
-++       headers: {
-++-        'Content-Type': 'application/json'
-++-      }
-+++        'Content-Type': 'application/json',
-+++      },
-++     })
-++     if (!res.ok) {
-++       throw new Error(`Error in setTimeout fetch  ${res.statusText}`)
-++     }
-++     const data = await res.json()
-++     libri.value = data.results
-++-    console.log({libri: libri.value})
-++-  } catch(err) {
-+++    console.log({ libri: libri.value })
-+++  } catch (err) {
-++     console.error('Errore nel recupero libri', err)
-++   }
-++ })
-++ </script>
-++ 
-++ <template>
-++-  <h1>Catalogo</h1>
-++-  <div class="parent">
-++-    <LibroCard
-++-    v-for="libro in libri" :key="libro.id" v-bind="libro"
-++-    class="libro-card" />
-+++  <div class="container">
-+++    <h1>Catalogo</h1>
-+++    <div class="parent">
-+++      <LibroCard
-+++        v-for="libro in libri"
-+++        :key="libro.id"
-+++        v-bind="libro"
-+++        @evidenzia="evidenzia"
-+++        :inEvidenza="idInEvidenza.includes(libro.id)"
-+++        class="libro-card"
-+++      />
-+++    </div>
-++   </div>
-++ </template>
-++ 
-+  <style scoped>
-+++.container {
-+++  background-color: #f5f5f4;
-+++}
-+++
-++ h1 {
-++-  text-align: center
-++-  ;
-+++  text-align: center;
-++ }
-+  .parent {
-+    display: grid;
-+--  grid-template-columns: repeat(4, 1fr);
-+--  grid-template-rows: repeat(4, 1fr);
-+--  gap: 8px;
-+-+  /* grid-template-columns: repeat(6, 1fr); */
-+-+  /* Automatically fits as many cards as possible, minimum width 280px */
-+-+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-+-+  /* grid-template-rows: repeat(4, 1fr); */
-+-+  gap: 32px;
-+-+
-++@@ -45,7 +73,6 @@ h1 {
-++   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-++   /* grid-template-rows: repeat(4, 1fr); */
-++   gap: 32px;
-++-
-+  }
-+  
-+  .libro-card {
-+--  grid-column: span 2 / span 2;
-+--  grid-row: span 4 / span 4;
-+-+  /* grid-column: span 2 / span 2;
-+-+  grid-row: span 4 / span 4; */
-+-+  /* Remove explicit grid spans so they naturally flow into the auto columns */
-+-+  grid-column: auto;
-+-+  grid-row: auto;
-+-+}
-+-+
-+-+/* @media screen and (max-width: 1200px) {
-+-+ .parent {
-+-+  display: grid;
-+-+  grid-template-columns: repeat(4, 1fr);
-+-+  grid-template-rows: repeat(4, 1fr);
-+-+  gap: 32px;
-+- }
-+-+} */
-+- </style>
++</script>
++
++<template>
++  <RicercaLibri />
++</template>
+diff --git a/biblioblab-vue-frontend/src/views/SchedaLibroView.vue b/biblioblab-vue-frontend/src/views/SchedaLibroView.vue
+new file mode 100644
+index 0000000..76d11b6
+--- /dev/null
++++ b/biblioblab-vue-frontend/src/views/SchedaLibroView.vue
+@@ -0,0 +1,8 @@
++<script setup>
++import SchedaLibro from '@/components/SchedaLibro.vue';
++
++</script>
++
++<template>
++<SchedaLibro />
++</template>

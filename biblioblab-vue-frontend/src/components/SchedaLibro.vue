@@ -35,7 +35,8 @@ const salva = async() => {
     loading.value = true
   // const result = await libriComp.newLibro(`https://jsonplaceholder.typicode.com/posts`, libro )
   // non ho access token al momento
-  const result = await libriComp.newLibro(`http://localhost:8000/api/libri/`, libro )
+  const result = await libriComp.newLibro(`/api/libri/`, libro ) //using vite proxy server (vite.config.js)
+  // const result = await libriComp.newLibro(`http://localhost:8000/api/libri/`, libro )
   console.log('Success', result)
    success.value = `Libro ${libro.titolo} salvato correttamente`
   }catch(err){

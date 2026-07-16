@@ -30,7 +30,8 @@ const libriDisponibili = computed(() => {
 const totaleLibri = computed(() => libri.value.length)
 
 onMounted(async () => {
-  libri.value = await libriComp.getLibri(`http://localhost:8000/api/libri/`)
+  libri.value = await libriComp.getLibri(`/api/libri/`) //using proxy server (vite.config.js)
+  // libri.value = await libriComp.getLibri(`http://localhost:8000/api/libri/`)
   console.log({libriComp: libri.value})
 })
 </script>

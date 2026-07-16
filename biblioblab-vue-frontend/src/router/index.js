@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 
-
 const routes = [
 {
   path: '/',
@@ -24,6 +23,12 @@ const routes = [
   name: 'ricerca',
   component: () => import('@/views/RicercaLibriView.vue'),
   meta: {titoloPagina: 'Ricerca Libri'}
+},
+{
+  path: '/login',
+  name: 'login',
+  component: () => import('@/views/LoginView.vue'),
+  meta: {titoloPagina: 'Login'}
 }
 ]
 

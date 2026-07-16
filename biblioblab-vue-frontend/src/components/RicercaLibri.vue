@@ -14,7 +14,8 @@ const loading = ref(false)
 
 onMounted(async() => {
   try {
-    const res = await fetch(`http://localhost:8000/api/libri/`)
+    const res = await fetch(`/api/libri/`) // vite proxy (vite.config.js)
+    // const res = await fetch(`http://localhost:8000/api/libri/`)
     if (!res.ok){
       throw new Error('Error during the fetch for genres', Error.message)
     }
@@ -25,19 +26,8 @@ onMounted(async() => {
     console.error('Error fetching onMounted', err)
   }
 })
-// const generi = computed(() => {
-//   const gen = new Set();
-//    for (const libro of libri.value) {
-//     for (const genere of libro.categorie){
-//       gen.add(genere)
-//     }
-//    }
-//    return [...gen]
-// })
 
-// Get all genres from the first onMounted fetch
-// cleaner using flatMap() to flatten all categories in one Array
-// then returning objects since the template expects {value, label}
+
 const generi = computed(() => {
   const unique = [...new Set(libri.value.flatMap(l => l.categorie))];
   return  [{ value: 'Tutti', label: 'Tutti' }, ...unique.map(g => ({ value: g, label: g }))];
@@ -50,7 +40,8 @@ watch(filtro, (newFiltro, oldFiltro) => {
   loading.value = true
   timeout = setTimeout(async () => {
     try {
-      const res = await fetch(`http://localhost:8000/api/libri/`, {
+      const res = await fetch(`/api/libri/`, { //vite proxy (vite.config.js)
+      // const res = await fetch(`http://localhost:8000/api/libri/`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -96,7 +87,8 @@ const libriFiltrati = computed(() => {
 
 const getLibriByGenere = async() => {
   try{
-    const res = await fetch(`http://localhost:8000/api/libri/`)
+    const res = await fetch(`/api/libri/`) // proxy vite (vite.config.js)
+    // const res = await fetch(`http://localhost:8000/api/libri/`)
     if (!res.ok) {
       throw new Error('Error fetching book by genre', Error.message)
        }
@@ -123,7 +115,7 @@ const getLibriByGenere = async() => {
     </li>
   </ul> -->
   <LoadingSpinner v-if="loading" />
-  <h3>Ricerca per genere, disponibilità, titolo o autore</h3>
+  <h3>Ricerca per disponibilità, titolo o autore</h3>
   <form class="form-container">
     <input type="text" v-model="filtro" placeholder="Inserisci testo..." />
     <div class="label">
@@ -131,27 +123,14 @@ const getLibriByGenere = async() => {
 
       <input id="disponibile" type="checkbox" v-model="soloDisponibili" />
     </div>
-    <!-- <select v-model="genereSelezionato">
-      <option selected>Tutti</option>
-      <option v-for="genere in generi" :key="genere" :value="genere">{{ genere }}</option>
-    </select> -->
-
-    <!-- <CampoSelect
-    v-model="genereSelezionato"
-    @change="seleziona"
-    :opzioni="generi"
-    /> -->
   </form>
-  <!-- <ul>
-      <li v-for="libro in libriFiltrati" :key="libro.id">
-        {{ libro.titolo }} di {{ libro.autore }} ({{ libro.anno }})
-      </li>
-    </ul> -->
+
   <h3>{{ libriFiltrati.length }} libri trovati su {{ libri.length }}</h3>
   <div class="parent">
     <LibroCard v-for="libro in libriFiltrati" :key="libro.id" v-bind="libro" class="libro-card" />
   </div>
   <h3>Libri filtrati per genere</h3>
+  <h4>{{ libriFiltratiPerGenere.length }} libri trovati su {{ libri.length }}</h4>
   <CampoSelect v-model="genereSelezionato" :opzioni="generi" @change="getLibriByGenere" />
   <div class="parent">
     <LibroCard v-for="libro in libriFiltratiPerGenere" :key="libro.id" v-bind="libro" class="libro-card" />
@@ -169,11 +148,8 @@ const getLibriByGenere = async() => {
   width: 200px;
   margin: auto;
 }
-h2 {
-  text-align: center;
-  margin: 60px auto 30px;
-}
-h3 {
+
+h2,h3, h4 {
   text-align: center;
   margin-bottom: 15px;
 }
