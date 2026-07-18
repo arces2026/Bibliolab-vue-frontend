@@ -29,6 +29,12 @@ const routes = [
   name: 'login',
   component: () => import('@/views/LoginView.vue'),
   meta: {titoloPagina: 'Login'}
+},
+{
+  path: '/register',
+  name: 'register',
+  component: () => import('@/views/RegisterView.vue'),
+  meta: {titoloPagina: 'Register'}
 }
 ]
 

@@ -1,12 +1,55 @@
-import { defineStore } from "pinia";
-import { ref, computed } from 'vue';
-// import { useRouter } from 'vue-router'
+import { defineStore } from 'pinia'
+import { ref, computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 
 export const useAuthStore = defineStore('auth', () => {
   const utente = ref(null) //{id, username, email, isStaff}
-
+  const isAuthenticated = ref(false)
   const isLogged = computed(() => utente.value !== null)
   const isStaff = computed(() => utente.value?.is_staff === true)
+  const error = ref(null)
+  const success = ref(null)
+  const loading = ref(false)
+  const API_BASE = '/api/vue/auth/'
+  const route = useRoute()
+  const router = useRouter()
+
+  async function register(userData) {
+    loading.value = true
+    error.value = null
+
+    try {
+      console.log('📝 Registering with data:', userData)
+      console.log('🔑 CSRF Token being sent:', getCsrf())
+
+      const res = await fetch(`${API_BASE}register/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCsrf(),
+        },
+        credentials: 'include', //for cookie session
+        body: JSON.stringify(userData),
+      })
+
+       if (!res.ok) {
+           throw new Error(`Validation failed: ${Error.message}`)
+         }
+
+      const data = await res.json()
+      console.log('📦 Response:', { status: res.status, data: res.statusText})
+      success.value = 'Registrazione avvenuta con successo. Redirecting...'
+      // Auto-login after Registration
+      await login(userData.username, userData.password)
+      isAuthenticated.value = true
+      return data
+    } catch (err) {
+      error.value = err.message
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
 
   async function login(username, password) {
     try {
@@ -16,7 +59,7 @@ export const useAuthStore = defineStore('auth', () => {
       // console.log({ csrftoken: csrftoken })
 
       //2. login with with the extracted csrftoken
-      const res = await fetch('/api/vue/auth/login/', {
+      const res = await fetch(`${API_BASE}login/`, {
         // const res = await fetch('accounts/api/auth/login/', {
         method: 'POST',
         credentials: 'include',
@@ -32,6 +75,8 @@ export const useAuthStore = defineStore('auth', () => {
 
       utente.value = await res.json()
       console.log({ utente: utente.value })
+       const redirect = route.query.redirect || '/libri'
+       router.push(redirect)
     } catch (err) {
       console.error('Error trying to login:', err)
       throw err
@@ -39,7 +84,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function logout() {
-    await fetch('/api/vue/auth/logout/', {
+    await fetch(`${API_BASE}logout/`, {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -51,7 +96,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function caricaUtente() {
     try {
-      const res = await fetch('/api/vue/auth/me/', { credentials: 'include' })
+      const res = await fetch(`${API_BASE}me/`, { credentials: 'include' })
 
       if (!res.ok) throw new Error(`Utente non loggato: ${res.status} ${res.statusText}`)
       utente.value = await res.json()
@@ -61,11 +106,14 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   //ottiene il token dal session cookie
-  function getCsrf(){
-    return document.cookie.split(';')
-    .find(c => c.trim().startsWith('csrftoken='))
-    ?.split('=')[1] || ''
+  function getCsrf() {
+    return (
+      document.cookie
+        .split(';')
+        .find((c) => c.trim().startsWith('csrftoken='))
+        ?.split('=')[1] || ''
+    )
   }
 
-  return { utente, isLogged, isStaff, login, logout, caricaUtente }
+  return { utente, isLogged, isStaff, loading, success, error, register, login, logout, caricaUtente }
 })
