@@ -1,72 +1,83 @@
 <script setup>
-import { computed, reactive, ref } from 'vue';
-import { useLibri } from '@/composable/useLibri';
-import LoadingSpinner from './LoadingSpinner.vue';
+import { computed, reactive, ref, onMounted } from 'vue'
+import { useLibri } from '@/composable/useLibri'
+import LoadingSpinner from './LoadingSpinner.vue'
+import { useAuthStore } from '@/stores/authStore.js'
 
 const libriComp = useLibri()
 const success = ref('')
 const error = ref('')
 const loading = ref(false)
+const authStore = useAuthStore()
+
+const autori = ref([])
+const categ = ref([])
+
+onMounted(async () => {
+  try {
+    autori.value = await libriComp.getAutori('/api/v1/autori/') //django api view da creare
+    console.log({ autori: autori.value })
+  } catch (err) {
+    console.error('Errore nel recupero degli autori', err.message)
+  }
+
+  try {
+    categ.value = await libriComp.getCategorie('/api/v1/categorie/')
+  } catch (err) {
+    console.error('Errore nel recupero delle categorie', err.message)
+  }
+})
 
 const libro = reactive({
   titolo: '',
   autore: '',
   isbn: '',
   anno_pubblicazione: null,
-  categorie: 'romanzo',
+  categorie: [],
   disponibile: true,
   descrizione: '',
-  cover_url: ''
+  cover_url: '',
 })
 
-const formValido = computed(() =>
-  libro.titolo.trim() !== '' && libro.autore.trim() !== ''
-)
+const formValido = computed(() => libro.titolo.trim() !== '')
 
-const salva = async() => {
-  // console.log('Libro salvato correttamente', libro)
-  // alert('Libro salvato correttamente')
-  // setTimeout(() => {
-  // for (const key in libro){
-  //    libro[key] = ''
-  // }
-  // }, 4000)
+// const nomeCompleto = computed(() => autori.value.map((a) => a.nome + ' ' + a.cognome))
+
+const salva = async () => {
+  console.log({isAuthenticated: authStore.isAuthenticated, utente: authStore.utente})
+
   try {
-    loading.value = true
-  // const result = await libriComp.newLibro(`https://jsonplaceholder.typicode.com/posts`, libro )
-  // non ho access token al momento
-  const result = await libriComp.newLibro(`/api/libri/`, libro ) //using vite proxy server (vite.config.js)
-  // const result = await libriComp.newLibro(`http://localhost:8000/api/libri/`, libro )
-  console.log('Success', result)
-   success.value = `Libro ${libro.titolo} salvato correttamente`
-  }catch(err){
-    console.log('Caught err', err)
-    error.value = `Errore nel salvataggio del libro: ${err}`
-  } finally{
-    loading.value = false
+    const result = await libriComp.newLibro(`/api/v1/libri/`, libro) //using vite proxy server (vite.config.js)
+
+    console.log('Success', result)
+    success.value = `Libro ${libro.titolo} salvato correttamente`
+  } catch (err) {
+    console.log('Caught err', err.message)
+    error.value = `Errore nel salvataggio del libro: ${err.message}`
   }
 }
-
 </script>
 
 <template>
   <h2>Scheda libro</h2>
-  <form action="" @submit.prevent="salva" class="form">
-    <input type="text" v-model="libro.titolo" placeholder="titolo" required>
-    <input type="text" v-model="libro.autore" placeholder="autore" required>
-    <input type="text" v-model="libro.isbn" placeholder="isbn">
-    <input type="number" v-model="libro.anno_pubblicazione" placeholder="anno">
-    <select v-model="libro.categorie">
-      <option value="saggio">Saggio</option>
-      <option value="romanzo" >Romanzo</option>
-      <option value="classico" >Classico</option>
-      <option value="racconti" >Racconti</option>
-      <option value="contemporaneo" >Contemporaneo</option>
+  <form @submit.prevent="salva" class="form">
+    <input type="text" v-model="libro.titolo" placeholder="titolo" required />
+    <select v-model="libro.autore">
+      <option disabled value="">Scegli autore...</option>
+      <option v-for="autore in autori" :key="autore.id" :value="autore.id">{{ autore.cognome }} {{autore.nome}}</option>
     </select>
-    <LoadingSpinner v-if="loading"/>
+    <input type="text" v-model="libro.isbn" placeholder="isbn" />
+    <input type="number" v-model="libro.anno_pubblicazione" placeholder="anno" />
+    <select v-model="libro.categorie">
+      <option disabled value="">Seleziona categoria</option>
+      <option v-for="categoria in categ" :key="categoria.id" :value="categoria">
+        {{ categoria.nome }}
+      </option>
+    </select>
+    <LoadingSpinner v-if="loading" />
     <label for="disponibile">Disponibile</label>
-    <input type="checkbox" v-model="libro.disponibile" id="disponibile">
-    <input type="url" v-model="libro.cover_url" placeholder="inserisci url cover...">
+    <input type="checkbox" v-model="libro.disponibile" id="disponibile" />
+    <input type="url" v-model="libro.cover_url" placeholder="Inserisci URL cover..." />
     <textarea name="" id="" v-model="libro.descrizione"></textarea>
     <button :disabled="!formValido">Salva</button>
     <p v-if="success">{{ success }}</p>
@@ -90,12 +101,15 @@ h2 {
   justify-content: center;
   margin: 10px auto;
 }
-input, select, textarea {
+input,
+select,
+textarea {
   width: 100%;
   padding: 4px;
   border-radius: 4px;
 }
-input[type='checkbox'], select {
+input[type='checkbox'],
+select {
   cursor: pointer;
 }
 textarea {

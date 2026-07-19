@@ -75,8 +75,10 @@ export const useAuthStore = defineStore('auth', () => {
 
       utente.value = await res.json()
       console.log({ utente: utente.value })
+      isAuthenticated.value = true
        const redirect = route.query.redirect || '/libri'
        router.push(redirect)
+
     } catch (err) {
       console.error('Error trying to login:', err)
       throw err
@@ -92,6 +94,7 @@ export const useAuthStore = defineStore('auth', () => {
       },
     })
     utente.value = null
+    isAuthenticated.value = false
   }
 
   async function caricaUtente() {
@@ -115,5 +118,5 @@ export const useAuthStore = defineStore('auth', () => {
     )
   }
 
-  return { utente, isLogged, isStaff, loading, success, error, register, login, logout, caricaUtente }
+  return { isAuthenticated, utente, isLogged, isStaff, loading, success, error, register, login, logout, caricaUtente, getCsrf }
 })
