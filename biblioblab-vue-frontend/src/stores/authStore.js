@@ -6,7 +6,7 @@ export const useAuthStore = defineStore('auth', () => {
   const utente = ref(null) //{id, username, email, isStaff}
   const isAuthenticated = ref(false)
   const isLogged = computed(() => utente.value !== null)
-  const isStaff = computed(() => utente.value?.is_staff === true)
+  const isStaff = computed(() => utente.value?.isStaff === true)
   const error = ref(null)
   const success = ref(null)
   const loading = ref(false)
@@ -76,8 +76,8 @@ export const useAuthStore = defineStore('auth', () => {
       utente.value = await res.json()
       console.log({ utente: utente.value })
       isAuthenticated.value = true
-       const redirect = route.query.redirect || '/libri'
-       router.push(redirect)
+      //  const redirect = route.query.redirect || '/libri'
+      //  router.push(redirect)
 
     } catch (err) {
       console.error('Error trying to login:', err)
@@ -99,12 +99,29 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function caricaUtente() {
     try {
-      const res = await fetch(`${API_BASE}me/`, { credentials: 'include' })
+      const res = await fetch(`${API_BASE}me/`, {
+        credentials: 'include',
+      })
 
-      if (!res.ok) throw new Error(`Utente non loggato: ${res.status} ${res.statusText}`)
-      utente.value = await res.json()
+      if (res.status === 401 || res.status === 403) {
+        // User is not authenticated, clear the store
+        utente.value = null
+        isAuthenticated.value = false
+        return null
+      }
+
+      if (!res.ok) throw new Error(`Errore: ${res.status} ${res.statusText}`)
+
+      const userData = await res.json()
+      utente.value = userData
+      isAuthenticated.value = true
+      console.log('✅ User session restored:', userData)
+      return userData
     } catch (err) {
-      console.error('Errore caricando utente', err)
+      console.error('❌ Errore caricando utente:', err)
+      utente.value = null
+      isAuthenticated.value = false
+      return null
     }
   }
 

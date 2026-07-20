@@ -3,11 +3,13 @@ import { useAuthStore } from '@/stores/authStore'
 
 export function useLibri() {
   const libri = ref([])
+  const libro = ref({})
   const loading = ref(false)
   const error = ref(null)
   const autori = ref([])
   const categorie = ref([])
   const authStore = useAuthStore()
+
 
   const getLibri = async (url) => {
     loading.value = true
@@ -27,19 +29,32 @@ export function useLibri() {
     }
   }
 
+  const getLibro = async (url) => {
+    try {
+      const res = await fetch(url)
+      if (!res.ok)
+        throw new Error(`Errore recuperando il libro ${libro.value.titolo}: ${res.status} ${res.statusText}`)
+      const data = await res.json()
+      libro.value = data
+      console.log({ data: libro.value })
+      return data
+    } catch (err) {
+      console.error('Errore nel recupero del libro', err.message)
+    }
+  }
 
-  const getAutori = async(url) => {
+  const getAutori = async (url) => {
     loading.value = true
-    try{
+    try {
       const res = await fetch(url)
 
       if (!res.ok) throw new Error('Errore nel recupero degli autori', res.status, res.statusText)
 
       const data = await res.json()
       autori.value = data.results || data
-      console.log({autori: autori.value})
+      console.log({ autori: autori.value })
       return autori.value
-    } catch(err){
+    } catch (err) {
       console.error('Errore catturato recuperando gli autori', err.message)
       throw err
     } finally {
@@ -47,17 +62,18 @@ export function useLibri() {
     }
   }
 
-  const getCategorie = async(url) => {
+  const getCategorie = async (url) => {
     loading.value = true
     try {
       const res = await fetch(url)
 
-      if (!res.ok) throw new Error('Errore nel recupero delle categorie', res.status, res.statusText)
+      if (!res.ok)
+        throw new Error('Errore nel recupero delle categorie', res.status, res.statusText)
       const data = await res.json()
-    categorie.value = data.results
-      console.log({categorie: categorie.value})
+      categorie.value = data.results
+      console.log({ categorie: categorie.value })
       return categorie.value
-    }catch(err){
+    } catch (err) {
       console.error('Errore catturato recuperando le categorie', err.message)
     } finally {
       loading.value = false
@@ -79,7 +95,7 @@ export function useLibri() {
         throw new Error(`Error creating a book: ${res.status}, ${res.statusText}`)
       }
       const data = await res.json()
-      console.log({nuovoLibro: data})
+      console.log({ nuovoLibro: data })
       libri.value.push(data)
       return data
     } catch (err) {
@@ -90,5 +106,35 @@ export function useLibri() {
     }
   }
 
-  return {libri, loading, error, getLibri, newLibro, getAutori, getCategorie }
+  const eliminaLibro = async(url) => {
+    try {
+      const res = await fetch(url, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': authStore.getCsrf(),
+        },
+      })
+      if (!res.ok)
+        throw new Error(
+          `Errore eliminando il libro ${libro.value.titolo}: ${res.status} ${res.statusText}`,
+        )
+     return { success: true, status: res.status }
+    } catch (err) {
+      console.error('Errore catturato eliminando il libro ', libro.value.titolo, err.message)
+      throw err
+    }
+  }
+
+  return {
+    libri,
+    loading,
+    error,
+    getLibri,
+    getLibro,
+    newLibro,
+    eliminaLibro,
+    getAutori,
+    getCategorie,
+  }
 }

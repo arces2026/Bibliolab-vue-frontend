@@ -1,13 +1,17 @@
 <template>
   <div class="container">
+
     <section class="cover">
-      <img :src="cover_url" :alt="titolo" />
+      <RouterLink class="link-to-dettaglio" :to="{ name: 'libro', params: { id: id } }">
+        <img :src="cover_url" :alt="titolo" class="image"/>
+      </RouterLink>
       <span class="isbn">isbn: {{ isbn }} </span>
+
     </section>
 
     <section class="header">
       <h3>{{ titolo }} <span v-if="inEvidenza">⭐</span></h3>
-      <p><strong>Autore</strong>: {{ autore.nome }} {{ autore.cognome }}</p>
+      <p><strong>Autore</strong>: {{ autore_oggetto.nome }} {{ autore_oggetto.cognome }}</p>
       <hr />
     </section>
 
@@ -15,7 +19,7 @@
       <ul class="genere">
         <strong>Genere</strong
         >:
-        <li v-for="genere in categorie" :key="genere">{{ genere }}</li>
+        <li v-for="genere in categorie" :key="genere.id">{{ genere.nome }}</li>
       </ul>
       <hr />
     </section>
@@ -29,23 +33,34 @@
       ><span :class="disponibile ? 'green' : 'red'">{{
         disponibile ? 'disponibile' : 'non disponibile'
       }}</span>
-      <button @click="onEvidenzia(id)" class="evidenzia">Evidenzia ⭐</button>
+      <button v-if="authStore.isStaff" @click="onEvidenzia(id)" class="evidenzia">Evidenzia ⭐</button>
     </section>
 
     <section class="footer">
       <!-- <span>isbn: {{ isbn }} </span> -->
     </section>
+
+     <!-- Debug info -->
+  <pre>isStaff: {{ authStore.isStaff }}</pre>
+  <pre>utente: {{ authStore.utente }}</pre>
+  <pre>isAuthenticated: {{ authStore.isAuthenticated }}</pre>
+    <button v-if="authStore.isStaff" class="elimina" @click="onDelete">Elimina libro</button>
+    <!-- <p v-if="error">{{ error }}</p> -->
   </div>
 </template>
 
 <script setup>
-// import { emit } from 'vue'
-// import defaultCover from '@/assets/libro_default.png'
+import { useLibri } from '@/composable/useLibri.js'
+import { useAuthStore } from '@/stores/authStore'
+
+const authStore = useAuthStore()
+const compoLibro = useLibri()
+// const error = ref(null)
 
 const props = defineProps({
   id: Number,
   titolo: String,
-  autore: {
+  autore_oggetto: {
     type: Object,
     required: true,
   },
@@ -82,7 +97,18 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['evidenzia'])
+const onDelete = async() => {
+  try {
+  const result = await compoLibro.eliminaLibro(`/api/v1/libri/${props.id}/`)
+  emit('delete', props.id)
+  console.log('Libro eliminato con successo', result)
+  }catch(err){
+    console.error('Errore durante l\'eliminazione', err.message)
+    alert('Errore durante l\'eliminazione:' + err.message)
+  }
+}
+
+const emit = defineEmits(['evidenzia', 'delete'])
 
 const onEvidenzia = () => emit('evidenzia', props.id)
 </script>
@@ -95,6 +121,16 @@ const onEvidenzia = () => emit('evidenzia', props.id)
   /* border: 1px solid; */
 }
 
+.elimina {
+  position: absolute;
+  left: 20px;
+  bottom: 20px;
+  background-color: red;
+  color: white;
+  padding: 5px;
+  cursor: pointer;
+}
+
 hr {
   width: 70%;
   margin: 5px auto;
@@ -102,6 +138,7 @@ hr {
   box-shadow: 1px 1px 10px;
 }
 .container {
+  position: relative;
   width: 100%;
   max-width: 500px;
   min-width: 200px;
@@ -113,15 +150,12 @@ hr {
   grid-template-columns: 120px 1fr; /* Fixed width for cover, fluid for content */
   grid-template-rows: auto auto auto auto; /* Let rows adjust based on content size */
   gap: 8px;
-  transition: scale 0.2s ease;
+
   /* border: 1px solid blue; */
   padding: 12px;
   border-radius: 10px;
   box-shadow: 1px 1px 12px;
   background-color: #ffffff;
-}
-.container:hover {
-  scale: 1.02;
 }
 
 .cover {
@@ -137,7 +171,7 @@ hr {
   font-size: 0.75rem;
   color: #94a3b8;
 }
-img {
+.image {
   height: 100%;
   width: 100%;
   max-height: 200px;
@@ -145,9 +179,17 @@ img {
   border-radius: 2px 5px 5px 2px;
   /* border: 1px solid blue; */
   box-shadow: 1px 1px 24px gray;
+  transition: all 0.2s ease;
 }
+
+.image:hover {
+  scale: 1.05;
+  border: 1px solid blue;
+}
+
 h3 {
   margin: 10px;
+  text-align: center;
 }
 
 .header {
@@ -192,9 +234,12 @@ h3 {
   border-radius: 5px;
   transition: background-color 0.2s ease-in-out;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .evidenzia:hover {
-  background-color: rgb(202, 211, 211);
+  background-color: rgb(115, 138, 189);
+  scale: 1.05;
+  border: 1px solid blue;
 }
 </style>

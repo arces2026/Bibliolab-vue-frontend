@@ -1,10 +1,14 @@
 <script setup>
 import NavbarVue from './components/NavbarVue.vue';
+import { onMounted } from 'vue';
+import { useAuthStore } from './stores/authStore.js';
 
-// import RicercaLibri from './components/RicercaLibri.vue';
-// import SchedaLibro from './components/SchedaLibro.vue';
-// import CatalogoView from './views/CatalogoView.vue';
+const authStore = useAuthStore()
 
+// Mantiene la sessione dopo refresh
+onMounted(async() => {
+  await authStore.caricaUtente()
+})
 
 </script>
 

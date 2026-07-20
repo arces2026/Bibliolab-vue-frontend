@@ -48,18 +48,20 @@ const salva = async () => {
 
   try {
     const result = await libriComp.newLibro(`/api/v1/libri/`, libro) //using vite proxy server (vite.config.js)
-
+    emit('saved', result)
     console.log('Success', result)
-    success.value = `Libro ${libro.titolo} salvato correttamente`
+    // success.value = `Libro ${libro.titolo} salvato correttamente`
   } catch (err) {
     console.log('Caught err', err.message)
     error.value = `Errore nel salvataggio del libro: ${err.message}`
   }
 }
+
+const emit = defineEmits(['saved'])
 </script>
 
 <template>
-  <h2>Scheda libro</h2>
+  <h2>Inserisci nuovo libro</h2>
   <form @submit.prevent="salva" class="form">
     <input type="text" v-model="libro.titolo" placeholder="titolo" required />
     <select v-model="libro.autore">
