@@ -20,8 +20,8 @@ const routes = [
   },
   {
     path: `/modifica-libro/:id`,
-    name: 'modifica',
-    component: () => import('@/views/ModificaLibro.vue'),
+    name: 'modifica-libro',
+    component: () => import('@/views/ModificaLibroView.vue'),
     meta: { titoloPagina: 'ModificaLibro' },
   },
   {

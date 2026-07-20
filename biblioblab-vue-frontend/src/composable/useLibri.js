@@ -106,6 +106,28 @@ export function useLibri() {
     }
   }
 
+  const updateLibro = async (url, libroData) => {
+    try {
+      const response = await fetch(url, {
+        method: 'PUT', // or 'PATCH' if you want partial updates
+        headers: {
+          'Content-Type': 'application/json',
+          // Add authorization headers if needed
+        },
+        body: JSON.stringify(libroData),
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Error updating book:', error)
+      throw error
+    }
+  }
+
   const eliminaLibro = async(url) => {
     try {
       const res = await fetch(url, {
@@ -133,6 +155,7 @@ export function useLibri() {
     getLibri,
     getLibro,
     newLibro,
+    updateLibro,
     eliminaLibro,
     getAutori,
     getCategorie,

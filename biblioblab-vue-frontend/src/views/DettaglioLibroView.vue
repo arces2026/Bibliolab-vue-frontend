@@ -6,6 +6,7 @@ import { useLibri } from '@/composable/useLibri'
 const route = useRoute()
 const libro = ref({})
 const compLibro = useLibri()
+const id = ref(null)
 
 onMounted(async () => {
   const id = route.params.id //get id from route parameters
@@ -23,7 +24,7 @@ onMounted(async () => {
       <div class="libro-content">
         <div class="libro-header">
           <h2>{{ libro.titolo }}</h2>
-
+          <RouterLink :to="{ name: 'modifica-libro', params: { id: id } }">Modifica</RouterLink>
           <span
             class="status"
             :class="{ available: libro.disponibile, unavailable: !libro.disponibile }"

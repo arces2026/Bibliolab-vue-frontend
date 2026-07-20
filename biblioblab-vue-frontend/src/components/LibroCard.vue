@@ -137,17 +137,18 @@ hr {
   height: 100%;
   min-height: 250px;
   display: grid;
-  /* grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: 1fr, 2fr, 1fr, 1fr; */
   grid-template-columns: 120px 1fr; /* Fixed width for cover, fluid for content */
   grid-template-rows: auto auto auto auto; /* Let rows adjust based on content size */
   gap: 8px;
-
-  /* border: 1px solid blue; */
   padding: 12px;
   border-radius: 10px;
   box-shadow: 1px 1px 12px;
   background-color: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.container:hover {
+  scale: 1.01;
 }
 
 .cover {
@@ -169,7 +170,6 @@ hr {
   max-height: 200px;
   object-fit: cover;
   border-radius: 2px 5px 5px 2px;
-  /* border: 1px solid blue; */
   box-shadow: 1px 1px 24px gray;
   transition: all 0.2s ease;
 }
