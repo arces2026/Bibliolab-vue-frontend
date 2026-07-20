@@ -1,12 +1,77 @@
+<script setup>
+import { useLibri } from '@/composable/useLibri.js'
+import { useAuthStore } from '@/stores/authStore'
+import { computed } from 'vue'
+
+const authStore = useAuthStore()
+const compoLibro = useLibri()
+// const error = ref(null)
+
+const props = defineProps({
+  id: Number,
+  titolo: String,
+  autore_oggetto: {
+    type: Object,
+    required: true,
+  },
+  isbn: {
+    type: String,
+    default: '000-0-0000-0000-0',
+  },
+  anno_pubblicazione: Number,
+  categorie: Array,
+  // genere: String,
+  disponibile: {
+    type: Boolean,
+    default: true,
+  },
+  cover_url: String,
+  descrizione: {
+    type: String,
+    default: `Lorem ipsum dolor sit amet,
+     ameconsectetur adipiscing elit, sed do eiusmod tempor
+     incididunt ut labore et dolore magna aliqua. Ut enim ad
+     minim veniam, quis nostrud exercitation ullamco laboris nisi
+     ut aliquip ex ea commodo consequat. Duis aute irure dolor in
+     .`,
+  },
+  preferito: {
+    type: Boolean,
+    default: false,
+  },
+})
+
+const onDelete = async () => {
+  try {
+    const result = await compoLibro.eliminaLibro(`/api/v1/libri/${props.id}/`)
+    emit('delete', props.id)
+    console.log('Libro eliminato con successo', result)
+  } catch (err) {
+    console.error("Errore durante l'eliminazione", err.message)
+    alert("Errore durante l'eliminazione:" + err.message)
+  }
+}
+
+// Create a computed property for the cover URL
+const coverUrl = computed(() => {
+  return (
+    props.cover_url ||
+    `https://placehold.co/300x450/e2e8f0/1e293b?text=${encodeURIComponent(props.titolo || 'Book')}`
+  )
+})
+
+const emit = defineEmits(['addPreferiti', 'delete'])
+
+const addPreferiti = () => emit('addPreferiti', props.id)
+</script>
+
 <template>
   <div class="container">
-
     <section class="cover">
       <RouterLink class="link-to-dettaglio" :to="{ name: 'libro', params: { id: id } }">
-        <img :src="cover_url" :alt="titolo" class="image"/>
+        <img :src="coverUrl" :alt="titolo" class="image" />
       </RouterLink>
       <span class="isbn">isbn: {{ isbn }} </span>
-
     </section>
 
     <section class="header">
@@ -33,85 +98,12 @@
       ><span :class="disponibile ? 'green' : 'red'">{{
         disponibile ? 'disponibile' : 'non disponibile'
       }}</span>
-      <button  @click="addPreferiti(id)" class="add-preferiti">Aggiungi ⭐</button>
+      <button @click="addPreferiti(id)" class="add-preferiti">Aggiungi ⭐</button>
     </section>
 
-    <section class="footer">
-      <!-- <span>isbn: {{ isbn }} </span> -->
-    </section>
-
-     <!-- Debug info -->
-  <!-- <pre>isStaff: {{ authStore.isStaff }}</pre>
-  <pre>utente: {{ authStore.utente }}</pre>
-  <pre>isAuthenticated: {{ authStore.isAuthenticated }}</pre> -->
     <button v-if="authStore.isStaff" class="elimina" @click="onDelete">Elimina libro</button>
-    <!-- <p v-if="error">{{ error }}</p> -->
   </div>
 </template>
-
-<script setup>
-import { useLibri } from '@/composable/useLibri.js'
-import { useAuthStore } from '@/stores/authStore'
-
-const authStore = useAuthStore()
-const compoLibro = useLibri()
-// const error = ref(null)
-
-const props = defineProps({
-  id: Number,
-  titolo: String,
-  autore_oggetto: {
-    type: Object,
-    required: true,
-  },
-  isbn: {
-    type: String,
-    default: '000-0-0000-0000-0',
-  },
-  anno_pubblicazione: Number,
-  categorie: Array,
-  // genere: String,
-  disponibile: {
-    type: Boolean,
-    default: true,
-  },
-  cover_url: {
-    type: String,
-    default: (props) =>
-      // `https://www.googleapis.com/books/v1/volumes?q=${props.titolo}`
-      `https://placehold.co/300x450/e2e8f0/1e293b?text=${encodeURIComponent(props.titolo || 'Book')}`,
-    // default: defaultCover,
-  },
-  descrizione: {
-    type: String,
-    default: `Lorem ipsum dolor sit amet,
-     ameconsectetur adipiscing elit, sed do eiusmod tempor
-     incididunt ut labore et dolore magna aliqua. Ut enim ad
-     minim veniam, quis nostrud exercitation ullamco laboris nisi
-     ut aliquip ex ea commodo consequat. Duis aute irure dolor in
-     .`,
-  },
-  preferito: {
-    type: Boolean,
-    default: false,
-  },
-})
-
-const onDelete = async() => {
-  try {
-  const result = await compoLibro.eliminaLibro(`/api/v1/libri/${props.id}/`)
-  emit('delete', props.id)
-  console.log('Libro eliminato con successo', result)
-  }catch(err){
-    console.error('Errore durante l\'eliminazione', err.message)
-    alert('Errore durante l\'eliminazione:' + err.message)
-  }
-}
-
-const emit = defineEmits(['addPreferiti', 'delete'])
-
-const addPreferiti = () => emit('addPreferiti', props.id)
-</script>
 
 <style scoped>
 * {
