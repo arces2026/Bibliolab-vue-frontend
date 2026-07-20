@@ -1,0 +1,70 @@
+diff --git a/biblioblab-vue-frontend/src/components/LibroCard.vue b/biblioblab-vue-frontend/src/components/LibroCard.vue
+index 2da908e..f15de39 100644
+--- a/biblioblab-vue-frontend/src/components/LibroCard.vue
++++ b/biblioblab-vue-frontend/src/components/LibroCard.vue
+@@ -33,7 +33,7 @@
+       ><span :class="disponibile ? 'green' : 'red'">{{
+         disponibile ? 'disponibile' : 'non disponibile'
+       }}</span>
+-      <button v-if="authStore.isStaff" @click="onEvidenzia(id)" class="evidenzia">Evidenzia ⭐</button>
++      <button  @click="onEvidenzia(id)" class="evidenzia">Preferiti ⭐</button>
+     </section>
+ 
+     <section class="footer">
+@@ -41,9 +41,9 @@
+     </section>
+ 
+      <!-- Debug info -->
+-  <pre>isStaff: {{ authStore.isStaff }}</pre>
++  <!-- <pre>isStaff: {{ authStore.isStaff }}</pre>
+   <pre>utente: {{ authStore.utente }}</pre>
+-  <pre>isAuthenticated: {{ authStore.isAuthenticated }}</pre>
++  <pre>isAuthenticated: {{ authStore.isAuthenticated }}</pre> -->
+     <button v-if="authStore.isStaff" class="elimina" @click="onDelete">Elimina libro</button>
+     <!-- <p v-if="error">{{ error }}</p> -->
+   </div>
+diff --git a/biblioblab-vue-frontend/src/views/CatalogoView.vue b/biblioblab-vue-frontend/src/views/CatalogoView.vue
+index 1b60197..c3da87d 100644
+--- a/biblioblab-vue-frontend/src/views/CatalogoView.vue
++++ b/biblioblab-vue-frontend/src/views/CatalogoView.vue
+@@ -8,6 +8,7 @@ const libri = ref([])
+ const idInEvidenza = ref(new Set())
+ 
+ const evidenzia = (id) => {
++  localStorage.getItem('preferiti')
+   if (idInEvidenza.value.has(id)) {
+     idInEvidenza.value.delete(id)
+   } else {
+@@ -16,6 +17,7 @@ const evidenzia = (id) => {
+   // Ricrea il Set per reattività Vue
+   idInEvidenza.value = new Set(idInEvidenza.value)
+   console.log({ inEvidenza: inEvidenza.value(id) })
++  localStorage.setItem('preferiti', JSON.stringify(Array.from(idInEvidenza.value)))
+ }
+ 
+ const inEvidenza = computed(() => {
+@@ -30,11 +32,23 @@ const libriDisponibili = computed(() => {
+ const totaleLibri = computed(() => libri.value.length)
+ 
+ onMounted(async () => {
+-  libri.value = await libriComp.getLibri(`/api/v1/libri/`) //using proxy server (vite.config.js)
++  //First load from localStorage
++    const stored = localStorage.getItem('preferiti')
++  if (stored) {
++  try{
++    const parsed = JSON.parse(stored)
++    idInEvidenza.value = new Set(parsed)
++  } catch(err){
++    console.error('Error getting preferiti from localStorage', err.message)
++  }
++}
++// Then fetch the book
++libri.value = await libriComp.getLibri(`/api/v1/libri/`) //using proxy server (vite.config.js)
+   // libri.value = await libriComp.getLibri(`http://localhost:8000/api/libri/`)
+   console.log({libriComp: libri.value})
+ })
+ 
++
+ const rimuoviLibro = (id) => libri.value = libri.value.filter(l => l.id !== id)
+ </script>
+ 

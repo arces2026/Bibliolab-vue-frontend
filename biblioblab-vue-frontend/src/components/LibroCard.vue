@@ -10,7 +10,7 @@
     </section>
 
     <section class="header">
-      <h3>{{ titolo }} <span v-if="inEvidenza">⭐</span></h3>
+      <h3>{{ titolo }} <span v-if="preferito">⭐</span></h3>
       <p><strong>Autore</strong>: {{ autore_oggetto.nome }} {{ autore_oggetto.cognome }}</p>
       <hr />
     </section>
@@ -33,7 +33,7 @@
       ><span :class="disponibile ? 'green' : 'red'">{{
         disponibile ? 'disponibile' : 'non disponibile'
       }}</span>
-      <button v-if="authStore.isStaff" @click="onEvidenzia(id)" class="evidenzia">Evidenzia ⭐</button>
+      <button  @click="addPreferiti(id)" class="add-preferiti">Aggiungi ⭐</button>
     </section>
 
     <section class="footer">
@@ -41,9 +41,9 @@
     </section>
 
      <!-- Debug info -->
-  <pre>isStaff: {{ authStore.isStaff }}</pre>
+  <!-- <pre>isStaff: {{ authStore.isStaff }}</pre>
   <pre>utente: {{ authStore.utente }}</pre>
-  <pre>isAuthenticated: {{ authStore.isAuthenticated }}</pre>
+  <pre>isAuthenticated: {{ authStore.isAuthenticated }}</pre> -->
     <button v-if="authStore.isStaff" class="elimina" @click="onDelete">Elimina libro</button>
     <!-- <p v-if="error">{{ error }}</p> -->
   </div>
@@ -91,7 +91,7 @@ const props = defineProps({
      ut aliquip ex ea commodo consequat. Duis aute irure dolor in
      .`,
   },
-  inEvidenza: {
+  preferito: {
     type: Boolean,
     default: false,
   },
@@ -108,9 +108,9 @@ const onDelete = async() => {
   }
 }
 
-const emit = defineEmits(['evidenzia', 'delete'])
+const emit = defineEmits(['addPreferiti', 'delete'])
 
-const onEvidenzia = () => emit('evidenzia', props.id)
+const addPreferiti = () => emit('addPreferiti', props.id)
 </script>
 
 <style scoped>
@@ -227,7 +227,7 @@ h3 {
   color: red;
 }
 
-.evidenzia {
+.add-preferiti {
   padding: 5px;
   width: 80%;
   margin: auto;

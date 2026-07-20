@@ -5,22 +5,24 @@ import { useLibri } from '@/composable/useLibri'
 
 const libriComp = useLibri()
 const libri = ref([])
-const idInEvidenza = ref(new Set())
+const arrayPreferiti = ref(new Set())
 
-const evidenzia = (id) => {
-  if (idInEvidenza.value.has(id)) {
-    idInEvidenza.value.delete(id)
+const preferiti = (id) => {
+  localStorage.getItem('preferiti')
+  if (arrayPreferiti.value.has(id)) {
+    arrayPreferiti.value.delete(id)
   } else {
-    idInEvidenza.value.add(id)
+    arrayPreferiti.value.add(id)
   }
   // Ricrea il Set per reattività Vue
-  idInEvidenza.value = new Set(idInEvidenza.value)
-  console.log({ inEvidenza: inEvidenza.value(id) })
+  arrayPreferiti.value = new Set(arrayPreferiti.value)
+  console.log({ preferito: preferito.value(id) })
+  localStorage.setItem('preferiti', JSON.stringify(Array.from(arrayPreferiti.value)))
 }
 
-const inEvidenza = computed(() => {
+const preferito = computed(() => {
   //has() for set includes() for array
-  return (id) => idInEvidenza.value.has(id)
+  return (id) => arrayPreferiti.value.has(id)
 })
 
 const libriDisponibili = computed(() => {
@@ -30,10 +32,22 @@ const libriDisponibili = computed(() => {
 const totaleLibri = computed(() => libri.value.length)
 
 onMounted(async () => {
-  libri.value = await libriComp.getLibri(`/api/v1/libri/`) //using proxy server (vite.config.js)
+  //First load from localStorage
+    const stored = localStorage.getItem('preferiti')
+  if (stored) {
+  try{
+    const parsed = JSON.parse(stored)
+    arrayPreferiti.value = new Set(parsed)
+  } catch(err){
+    console.error('Error getting preferiti from localStorage', err.message)
+  }
+}
+// Then fetch the book
+libri.value = await libriComp.getLibri(`/api/v1/libri/`) //using proxy server (vite.config.js)
   // libri.value = await libriComp.getLibri(`http://localhost:8000/api/libri/`)
   console.log({libriComp: libri.value})
 })
+
 
 const rimuoviLibro = (id) => libri.value = libri.value.filter(l => l.id !== id)
 </script>
@@ -47,9 +61,9 @@ const rimuoviLibro = (id) => libri.value = libri.value.filter(l => l.id !== id)
         v-for="libro in libri"
         :key="libro.id"
         v-bind="libro"
-        @evidenzia="evidenzia"
+        @addPreferiti="preferiti"
         @delete="rimuoviLibro"
-        :inEvidenza="idInEvidenza.has(libro.id)"
+        :preferito="arrayPreferiti.has(libro.id)"
         class="libro-card"
       />
     </div>
