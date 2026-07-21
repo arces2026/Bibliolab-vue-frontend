@@ -109,10 +109,10 @@ export function useLibri() {
   const updateLibro = async (url, libroData) => {
     try {
       const response = await fetch(url, {
-        method: 'PUT', // or 'PATCH' if you want partial updates
+        method: 'PATCH', // or 'PATCH' if you want partial updates
         headers: {
           'Content-Type': 'application/json',
-          // Add authorization headers if needed
+          'X-CSRFToken': authStore.getCsrf(),
         },
         body: JSON.stringify(libroData),
       })

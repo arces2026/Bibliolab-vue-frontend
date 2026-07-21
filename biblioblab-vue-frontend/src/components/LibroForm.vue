@@ -39,21 +39,22 @@ onMounted(async () => {
     console.error('Errore nel recupero delle categorie', err.message)
   }
 
-
   // Fetch book data if editing
   if (props.isEdit && props.idLibro) {
     try {
       let result = await libriComp.getLibro(`/api/v1/libri/${props.idLibro}`)
 
-         // Populate form with existing data
-    libro.titolo = result.titolo || ''
-    libro.autore_oggetto.cognome = result.autore_oggetto.cognome || ''
-    libro.isbn = result.isbn || ''
-    libro.anno_pubblicazione = result.anno_pubblicazione || null
-    libro.categorie[0] = result.categorie[0] || []
-    libro.disponibile = result.disponibile !== undefined ? result.disponibile : true
-    libro.descrizione = result.descrizione || ''
-    libro.cover_url = result.cover_url || ''
+      const autore = `${result.autore_oggetto.nome} ${result.autore_oggetto.cognome}`
+      console.log({ autore: autore })
+      // Populate form with existing data
+      libro.titolo = result.titolo || ''
+      libro.autore = result.autore || ''
+      libro.isbn = result.isbn || ''
+      libro.anno_pubblicazione = result.anno_pubblicazione || null
+      libro.categorie = result.categorie[0] || []
+      libro.disponibile = result.disponibile !== undefined ? result.disponibile : true
+      libro.descrizione = result.descrizione || ''
+      libro.cover_url = result.cover_url || ''
       console.log({ libro: libro.value })
     } catch (err) {
       console.log('Error:', err.message)
@@ -72,8 +73,6 @@ const props = defineProps({
   },
 })
 
-
-
 const formValido = computed(() => libro.titolo.trim() !== '')
 
 // const nomeCompleto = computed(() => autori.value.map((a) => a.nome + ' ' + a.cognome))
@@ -82,27 +81,13 @@ const salva = async () => {
   console.log({ isAuthenticated: authStore.isAuthenticated, utente: authStore.utente })
 
   try {
-    // const result = await libriComp.newLibro(`/api/v1/libri/`, libro) //using vite proxy server (vite.config.js)
-    // emit('saved', result)
-    // console.log('Success', result)
-    // success.value = `Libro ${libro.titolo} salvato correttamente`
-
     let result
 
     if (props.isEdit && props.idLibro) {
       // Update existing book
       result = await libriComp.updateLibro(`/api/v1/libri/${props.idLibro}/`, libro)
 
-    //   // Populate form with existing data
-    // libro.titolo = result.titolo || ''
-    // libro.autore_oggetto.cognome = result.autore_oggetto.cognome || ''
-    // libro.isbn = result.isbn || ''
-    // libro.anno_pubblicazione = result.anno_pubblicazione || null
-    // libro.categorie[0] = result.categorie[0] || []
-    // libro.disponibile = result.disponibile !== undefined ? result.disponibile : true
-    // libro.descrizione = result.descrizione || ''
-    // libro.cover_url = result.cover_url || ''
-      console.log({result : result})
+      console.log({ result: result })
       emit('updated', result)
       success.value = `Libro "${libro.titolo}" aggiornato correttamente`
     } else {
@@ -131,15 +116,14 @@ const salva = async () => {
   }
 }
 
-
 const emit = defineEmits(['saved', 'updated'])
 </script>
 
 <template>
-  <h2>{{isEdit? 'Modifica libro' :'Inserisci nuovo libro'}}</h2>
+  <h2>{{ isEdit ? 'Modifica libro' : 'Inserisci nuovo libro' }}</h2>
 
   <form @submit.prevent="salva" class="form">
-    <LoadingSpinner v-if="loading"/>
+    <LoadingSpinner v-if="loading" />
 
     <input type="text" v-model="libro.titolo" placeholder="titolo" required />
 
