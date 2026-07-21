@@ -98,7 +98,7 @@ const addPreferiti = () => emit('addPreferiti', props.id)
       ><span :class="disponibile ? 'green' : 'red'">{{
         disponibile ? 'disponibile' : 'non disponibile'
       }}</span>
-      <button @click="addPreferiti(id)" class="add-preferiti">Aggiungi ⭐</button>
+      <button @click="addPreferiti(id)" class="add-preferiti">{{ preferito ? 'Rimuovi' :'Aggiungi'}} ⭐</button>
     </section>
 
     <button v-if="authStore.isStaff" class="elimina" @click="onDelete">Elimina libro</button>

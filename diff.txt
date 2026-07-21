@@ -1,110 +1,519 @@
 diff --git a/biblioblab-vue-frontend/src/components/LibroForm.vue b/biblioblab-vue-frontend/src/components/LibroForm.vue
-index 1a2e5fe..2c79d05 100644
+index 2c79d05..9257ccf 100644
 --- a/biblioblab-vue-frontend/src/components/LibroForm.vue
 +++ b/biblioblab-vue-frontend/src/components/LibroForm.vue
-@@ -39,21 +39,22 @@ onMounted(async () => {
-     console.error('Errore nel recupero delle categorie', err.message)
-   }
+@@ -14,6 +14,7 @@ const authStore = useAuthStore()
+ const autori = ref([])
+ const categ = ref([])
  
--
-   // Fetch book data if editing
-   if (props.isEdit && props.idLibro) {
++// Value are given to this reactive const if we are modifying a libro
+ const libro = reactive({
+   titolo: '',
+   autore_oggetto: null,
+@@ -28,7 +29,6 @@ const libro = reactive({
+ onMounted(async () => {
+   try {
+     autori.value = await libriComp.getAutori('/api/v1/autori/') //django api view da creare
+-    console.log({ autori: autori.value })
+   } catch (err) {
+     console.error('Errore nel recupero degli autori', err.message)
+   }
+@@ -44,20 +44,17 @@ onMounted(async () => {
      try {
        let result = await libriComp.getLibro(`/api/v1/libri/${props.idLibro}`)
  
--         // Populate form with existing data
--    libro.titolo = result.titolo || ''
--    libro.autore_oggetto.cognome = result.autore_oggetto.cognome || ''
--    libro.isbn = result.isbn || ''
--    libro.anno_pubblicazione = result.anno_pubblicazione || null
--    libro.categorie[0] = result.categorie[0] || []
--    libro.disponibile = result.disponibile !== undefined ? result.disponibile : true
--    libro.descrizione = result.descrizione || ''
--    libro.cover_url = result.cover_url || ''
-+      const autore = `${result.autore_oggetto.nome} ${result.autore_oggetto.cognome}`
-+      console.log({ autore: autore })
-+      // Populate form with existing data
-+      libro.titolo = result.titolo || ''
-+      libro.autore = result.autore || ''
-+      libro.isbn = result.isbn || ''
-+      libro.anno_pubblicazione = result.anno_pubblicazione || null
-+      libro.categorie = result.categorie[0] || []
-+      libro.disponibile = result.disponibile !== undefined ? result.disponibile : true
-+      libro.descrizione = result.descrizione || ''
-+      libro.cover_url = result.cover_url || ''
-       console.log({ libro: libro.value })
+-      const autore = `${result.autore_oggetto.nome} ${result.autore_oggetto.cognome}`
+-      console.log({ autore: autore })
+       // Populate form with existing data
+       libro.titolo = result.titolo || ''
+-      libro.autore = result.autore || ''
++      libro.autore = result.autore || '' // it returns autore.id that in the select matches the full autore name
+       libro.isbn = result.isbn || ''
+       libro.anno_pubblicazione = result.anno_pubblicazione || null
+       libro.categorie = result.categorie[0] || []
+       libro.disponibile = result.disponibile !== undefined ? result.disponibile : true
+       libro.descrizione = result.descrizione || ''
+       libro.cover_url = result.cover_url || ''
+-      console.log({ libro: libro.value })
      } catch (err) {
-       console.log('Error:', err.message)
-@@ -72,8 +73,6 @@ const props = defineProps({
-   },
+-      console.log('Error:', err.message)
++      console.error('Error:', err.message)
+     }
+   }
  })
- 
--
--
- const formValido = computed(() => libro.titolo.trim() !== '')
- 
+@@ -78,23 +75,19 @@ const formValido = computed(() => libro.titolo.trim() !== '')
  // const nomeCompleto = computed(() => autori.value.map((a) => a.nome + ' ' + a.cognome))
-@@ -82,27 +81,13 @@ const salva = async () => {
-   console.log({ isAuthenticated: authStore.isAuthenticated, utente: authStore.utente })
  
-   try {
--    // const result = await libriComp.newLibro(`/api/v1/libri/`, libro) //using vite proxy server (vite.config.js)
--    // emit('saved', result)
--    // console.log('Success', result)
--    // success.value = `Libro ${libro.titolo} salvato correttamente`
+ const salva = async () => {
+-  console.log({ isAuthenticated: authStore.isAuthenticated, utente: authStore.utente })
 -
+   try {
      let result
  
      if (props.isEdit && props.idLibro) {
        // Update existing book
        result = await libriComp.updateLibro(`/api/v1/libri/${props.idLibro}/`, libro)
- 
--    //   // Populate form with existing data
--    // libro.titolo = result.titolo || ''
--    // libro.autore_oggetto.cognome = result.autore_oggetto.cognome || ''
--    // libro.isbn = result.isbn || ''
--    // libro.anno_pubblicazione = result.anno_pubblicazione || null
--    // libro.categorie[0] = result.categorie[0] || []
--    // libro.disponibile = result.disponibile !== undefined ? result.disponibile : true
--    // libro.descrizione = result.descrizione || ''
--    // libro.cover_url = result.cover_url || ''
--      console.log({result : result})
-+      console.log({ result: result })
+-
+-      console.log({ result: result })
        emit('updated', result)
        success.value = `Libro "${libro.titolo}" aggiornato correttamente`
      } else {
-@@ -131,15 +116,14 @@ const salva = async () => {
+       // Create new book
+       result = await libriComp.newLibro(`/api/v1/libri/`, libro)
+       emit('saved', result)
+-      success.value = `Libro "${libro.titolo}" salvato correttamente`
++      success.value = `Libro "${libro.titolo}" salvato correttamente. Reindirizzamento...`
+ 
+       // Reset form for new book (optional)
+       if (!props.isEdit) {
+@@ -150,8 +143,8 @@ const emit = defineEmits(['saved', 'updated'])
+     <input type="url" v-model="libro.cover_url" placeholder="Inserisci URL cover..." />
+     <textarea name="" id="" v-model="libro.descrizione"></textarea>
+     <button :disabled="!formValido || loading">{{ isEdit ? 'Aggiorna' : 'Salva' }}</button>
+-    <p v-if="success">{{ success }}</p>
+-    <p v-else>{{ error }}</p>
++    <p v-if="success" class="para success">{{ success }}</p>
++    <p v-else class="para error">{{ error }}</p>
+   </form>
+ </template>
+ 
+@@ -202,4 +195,17 @@ button:disabled {
+   scale: 0.95;
+   cursor: not-allowed;
+ }
++
++.para {
++ font-size: 1.5rem;
++  text-align: center;
++}
++
++.para.success {
++  color: green;
++}
++
++.para.error {
++  color: red;
++}
+ </style>
+diff --git a/biblioblab-vue-frontend/src/components/NavbarVue.vue b/biblioblab-vue-frontend/src/components/NavbarVue.vue
+index ffd1a93..bd3a93b 100644
+--- a/biblioblab-vue-frontend/src/components/NavbarVue.vue
++++ b/biblioblab-vue-frontend/src/components/NavbarVue.vue
+@@ -9,7 +9,7 @@ const authStore = useAuthStore()
+   <nav class="navbar">
+       <RouterLink to="/" class="logo" >Bibliolab</RouterLink>
+       <RouterLink :to="{name: 'catalogo'}">Libri</RouterLink>
+-      <RouterLink :to="{name: 'inserisci-libro'}">Inserisci libro</RouterLink>
++      <RouterLink v-if="authStore.utente && authStore.isStaff" :to="{name: 'inserisci-libro'}">Inserisci libro</RouterLink>
+       <RouterLink :to="{name: 'ricerca'}">Ricerca Libri</RouterLink>
+       <RouterLink :to="{name: 'login'}" v-if="!authStore.isLogged">Login</RouterLink>
+       <RouterLink :to="{name: 'register'}" v-if="!authStore.isLogged">Registrati</RouterLink>
+diff --git a/biblioblab-vue-frontend/src/components/RicercaLibri.vue b/biblioblab-vue-frontend/src/components/RicercaLibri.vue
+index 5f92bf9..e900c5d 100644
+--- a/biblioblab-vue-frontend/src/components/RicercaLibri.vue
++++ b/biblioblab-vue-frontend/src/components/RicercaLibri.vue
+@@ -21,7 +21,6 @@ onMounted(async() => {
+     }
+     const data = await res.json()
+     libri.value = data.results
+-    console.log({libriData: libri.value})
+   }catch(err){
+     console.error('Error fetching onMounted', err)
    }
+@@ -52,13 +51,11 @@ watch(filtro, (newFiltro, oldFiltro) => {
+       }
+       const data = await res.json()
+       libri.value = data.results
+-      console.log({ libri: libri.value, results: data.results })
+     } catch (err) {
+       console.error('Error while fetching libri', err)
+     } finally {
+-      console.log({ newFiltro: newFiltro, oldFiltro: oldFiltro })
++      loading.value = false
+     }
+-    loading.value = false
+   }, 300)
+ })
+ 
+@@ -80,7 +77,6 @@ const libriFiltrati = computed(() => {
+     const titolo = (l.titolo || '').toLowerCase()
+     const autore = (l.autore.nome || '').toLowerCase()
+     const search = filtro.value.toLowerCase()
+-    console.log({ resultfiler: titolo.includes(search) || autore.includes(search)})
+     return titolo.includes(search) || autore.includes(search)
+   })
+ })
+@@ -97,7 +93,6 @@ const getLibriByGenere = async() => {
+       if (genereSelezionato.value !== 'Tutti'){
+ 
+       libriFiltratiPerGenere.value = libri.value.filter((l) => l.categorie?.includes(genereSelezionato.value))
+-      console.log({bookByGenre: libriFiltratiPerGenere.value})
+       } else {
+         libriFiltratiPerGenere.value = libri.value
+       }
+diff --git a/biblioblab-vue-frontend/src/composable/useLibri.js b/biblioblab-vue-frontend/src/composable/useLibri.js
+index 740f677..58f2cf2 100644
+--- a/biblioblab-vue-frontend/src/composable/useLibri.js
++++ b/biblioblab-vue-frontend/src/composable/useLibri.js
+@@ -36,7 +36,6 @@ export function useLibri() {
+         throw new Error(`Errore recuperando il libro ${libro.value.titolo}: ${res.status} ${res.statusText}`)
+       const data = await res.json()
+       libro.value = data
+-      console.log({ data: libro.value })
+       return data
+     } catch (err) {
+       console.error('Errore nel recupero del libro', err.message)
+@@ -52,7 +51,6 @@ export function useLibri() {
+ 
+       const data = await res.json()
+       autori.value = data.results || data
+-      console.log({ autori: autori.value })
+       return autori.value
+     } catch (err) {
+       console.error('Errore catturato recuperando gli autori', err.message)
+@@ -71,7 +69,6 @@ export function useLibri() {
+         throw new Error('Errore nel recupero delle categorie', res.status, res.statusText)
+       const data = await res.json()
+       categorie.value = data.results
+-      console.log({ categorie: categorie.value })
+       return categorie.value
+     } catch (err) {
+       console.error('Errore catturato recuperando le categorie', err.message)
+@@ -95,7 +92,6 @@ export function useLibri() {
+         throw new Error(`Error creating a book: ${res.status}, ${res.statusText}`)
+       }
+       const data = await res.json()
+-      console.log({ nuovoLibro: data })
+       libri.value.push(data)
+       return data
+     } catch (err) {
+diff --git a/biblioblab-vue-frontend/src/stores/authStore.js b/biblioblab-vue-frontend/src/stores/authStore.js
+index 2833f86..2a3a364 100644
+--- a/biblioblab-vue-frontend/src/stores/authStore.js
++++ b/biblioblab-vue-frontend/src/stores/authStore.js
+@@ -19,8 +19,8 @@ export const useAuthStore = defineStore('auth', () => {
+     error.value = null
+ 
+     try {
+-      console.log('📝 Registering with data:', userData)
+-      console.log('🔑 CSRF Token being sent:', getCsrf())
++      // console.log('📝 Registering with data:', userData)
++      // console.log('🔑 CSRF Token being sent:', getCsrf())
+ 
+       const res = await fetch(`${API_BASE}register/`, {
+         method: 'POST',
+@@ -37,7 +37,7 @@ export const useAuthStore = defineStore('auth', () => {
+          }
+ 
+       const data = await res.json()
+-      console.log('📦 Response:', { status: res.status, data: res.statusText})
++      // console.log('📦 Response:', { status: res.status, data: res.statusText})
+       success.value = 'Registrazione avvenuta con successo. Redirecting...'
+       // Auto-login after Registration
+       await login(userData.username, userData.password)
+@@ -74,7 +74,6 @@ export const useAuthStore = defineStore('auth', () => {
+       if (!res.ok) throw new Error(`Credenziali non valide: ${res.status} ${res.statusText}`)
+ 
+       utente.value = await res.json()
+-      console.log({ utente: utente.value })
+       isAuthenticated.value = true
+       //  const redirect = route.query.redirect || '/libri'
+       //  router.push(redirect)
+@@ -115,7 +114,7 @@ export const useAuthStore = defineStore('auth', () => {
+       const userData = await res.json()
+       utente.value = userData
+       isAuthenticated.value = true
+-      console.log('✅ User session restored:', userData)
++      // console.log('✅ User session restored:', userData)
+       return userData
+     } catch (err) {
+       console.error('❌ Errore caricando utente:', err)
+diff --git a/biblioblab-vue-frontend/src/views/CatalogoView.vue b/biblioblab-vue-frontend/src/views/CatalogoView.vue
+index 2301258..da8c587 100644
+--- a/biblioblab-vue-frontend/src/views/CatalogoView.vue
++++ b/biblioblab-vue-frontend/src/views/CatalogoView.vue
+@@ -16,14 +16,14 @@ const preferiti = (id) => {
+   }
+   // Ricrea il Set per reattività Vue
+   arrayPreferiti.value = new Set(arrayPreferiti.value)
+-  console.log({ preferito: preferito.value(id) })
++  // console.log({ preferito: preferito.value(id) })
+   localStorage.setItem('preferiti', JSON.stringify(Array.from(arrayPreferiti.value)))
  }
  
--
- const emit = defineEmits(['saved', 'updated'])
+-const preferito = computed(() => {
+-  //has() for set includes() for array
+-  return (id) => arrayPreferiti.value.has(id)
+-})
++// const preferito = computed(() => {
++//   //has() for set includes() for array
++//   return (id) => arrayPreferiti.value.has(id)
++// })
+ 
+ const libriDisponibili = computed(() => {
+   return libri.value.filter(l => l.disponibile).length
+@@ -45,7 +45,6 @@ onMounted(async () => {
+ // Then fetch the book
+ libri.value = await libriComp.getLibri(`/api/v1/libri/`) //using proxy server (vite.config.js)
+   // libri.value = await libriComp.getLibri(`http://localhost:8000/api/libri/`)
+-  console.log({libriComp: libri.value})
+ })
+ 
+ 
+diff --git a/biblioblab-vue-frontend/src/views/DettaglioLibroView.vue b/biblioblab-vue-frontend/src/views/DettaglioLibroView.vue
+index 1b069a3..74d98ef 100644
+--- a/biblioblab-vue-frontend/src/views/DettaglioLibroView.vue
++++ b/biblioblab-vue-frontend/src/views/DettaglioLibroView.vue
+@@ -2,8 +2,10 @@
+ import { onMounted, ref } from 'vue'
+ import { useRoute } from 'vue-router'
+ import { useLibri } from '@/composable/useLibri'
++import { useAuthStore } from '@/stores/authStore'
+ 
+ const route = useRoute()
++const authStore = useAuthStore()
+ const libro = ref({})
+ const compLibro = useLibri()
+ const id = ref(null)
+@@ -24,7 +26,7 @@ onMounted(async () => {
+       <div class="libro-content">
+         <div class="libro-header">
+           <h2>{{ libro.titolo }}</h2>
+-          <RouterLink :to="{ name: 'modifica-libro', params: { id: id } }">Modifica</RouterLink>
++          <RouterLink v-if="authStore.utente && authStore.isStaff" :to="{ name: 'modifica-libro', params: { id: id } }">Modifica</RouterLink>
+           <span
+             class="status"
+             :class="{ available: libro.disponibile, unavailable: !libro.disponibile }"
+diff --git a/biblioblab-vue-frontend/src/views/InserisciLibroView.vue b/biblioblab-vue-frontend/src/views/InserisciLibroView.vue
+index acdacba..ae27622 100644
+--- a/biblioblab-vue-frontend/src/views/InserisciLibroView.vue
++++ b/biblioblab-vue-frontend/src/views/InserisciLibroView.vue
+@@ -1,19 +1,21 @@
+ <script setup>
+-import { useRouter} from 'vue-router'
+-import LibroForm from '@/components/LibroForm.vue';
+-import { ref } from 'vue'
++import { useRouter } from 'vue-router'
++import LibroForm from '@/components/LibroForm.vue'
+ 
+-const success = ref(null)
+ 
+-const onSuccess = (libro) => {
+-  // alert(`Libro ${libro.titolo} salvato con successo`)
+-  // router.push('/libri')
+-  success.value = `${libro.titolo} salvato con successo!`
+-}
++const router = useRouter()
+ 
++const onSuccess = () => {
++  setTimeout(() => {
++    router.push('/libri')
++  }, 1500)
++}
  </script>
  
  <template>
--  <h2>{{isEdit? 'Modifica libro' :'Inserisci nuovo libro'}}</h2>
-+  <h2>{{ isEdit ? 'Modifica libro' : 'Inserisci nuovo libro' }}</h2>
+-<LibroForm @saved="onSuccess"/>
+-<p v-if="success">{{ success }}</p>
++  <LibroForm @saved="onSuccess" />
+ </template>
++
++<style scoped>
++
++</style>
+diff --git a/biblioblab-vue-frontend/src/views/LoginView.vue b/biblioblab-vue-frontend/src/views/LoginView.vue
+index 96b00d6..3ade580 100644
+--- a/biblioblab-vue-frontend/src/views/LoginView.vue
++++ b/biblioblab-vue-frontend/src/views/LoginView.vue
+@@ -13,13 +13,11 @@ const error = ref('')
+ const loading = ref(false)
  
-   <form @submit.prevent="salva" class="form">
--    <LoadingSpinner v-if="loading"/>
-+    <LoadingSpinner v-if="loading" />
- 
-     <input type="text" v-model="libro.titolo" placeholder="titolo" required />
- 
-diff --git a/biblioblab-vue-frontend/src/composable/useLibri.js b/biblioblab-vue-frontend/src/composable/useLibri.js
-index 648b872..740f677 100644
---- a/biblioblab-vue-frontend/src/composable/useLibri.js
-+++ b/biblioblab-vue-frontend/src/composable/useLibri.js
-@@ -109,10 +109,10 @@ export function useLibri() {
-   const updateLibro = async (url, libroData) => {
-     try {
-       const response = await fetch(url, {
--        method: 'PUT', // or 'PATCH' if you want partial updates
-+        method: 'PATCH', // or 'PATCH' if you want partial updates
-         headers: {
-           'Content-Type': 'application/json',
--          // Add authorization headers if needed
-+          'X-CSRFToken': authStore.getCsrf(),
-         },
-         body: JSON.stringify(libroData),
-       })
+ const onLogin = async() => {
+-  console.log({loginView: 'Login started'})
+   error.value = ''
+   loading.value = true
+   try {
+-    const test = await authStore.login(form.username, form.password)
++    await authStore.login(form.username, form.password)
+     // Dopo il login, torna dove l'utente voleva andare
+-    console.log({test: test})
+     const redirect = route.query.redirect || '/libri'
+     router.push(redirect)
+   }catch(err){
+diff --git a/diff.txt b/diff.txt
+index 100eab6..fcd6b34 100644
+--- a/diff.txt
++++ b/diff.txt
+@@ -1,70 +1,110 @@
+-diff --git a/biblioblab-vue-frontend/src/components/LibroCard.vue b/biblioblab-vue-frontend/src/components/LibroCard.vue
+-index 2da908e..f15de39 100644
+---- a/biblioblab-vue-frontend/src/components/LibroCard.vue
+-+++ b/biblioblab-vue-frontend/src/components/LibroCard.vue
+-@@ -33,7 +33,7 @@
+-       ><span :class="disponibile ? 'green' : 'red'">{{
+-         disponibile ? 'disponibile' : 'non disponibile'
+-       }}</span>
+--      <button v-if="authStore.isStaff" @click="onEvidenzia(id)" class="evidenzia">Evidenzia ⭐</button>
+-+      <button  @click="onEvidenzia(id)" class="evidenzia">Preferiti ⭐</button>
+-     </section>
++diff --git a/biblioblab-vue-frontend/src/components/LibroForm.vue b/biblioblab-vue-frontend/src/components/LibroForm.vue
++index 1a2e5fe..2c79d05 100644
++--- a/biblioblab-vue-frontend/src/components/LibroForm.vue
+++++ b/biblioblab-vue-frontend/src/components/LibroForm.vue
++@@ -39,21 +39,22 @@ onMounted(async () => {
++     console.error('Errore nel recupero delle categorie', err.message)
++   }
+  
+-     <section class="footer">
+-@@ -41,9 +41,9 @@
+-     </section>
++-
++   // Fetch book data if editing
++   if (props.isEdit && props.idLibro) {
++     try {
++       let result = await libriComp.getLibro(`/api/v1/libri/${props.idLibro}`)
+  
+-      <!-- Debug info -->
+--  <pre>isStaff: {{ authStore.isStaff }}</pre>
+-+  <!-- <pre>isStaff: {{ authStore.isStaff }}</pre>
+-   <pre>utente: {{ authStore.utente }}</pre>
+--  <pre>isAuthenticated: {{ authStore.isAuthenticated }}</pre>
+-+  <pre>isAuthenticated: {{ authStore.isAuthenticated }}</pre> -->
+-     <button v-if="authStore.isStaff" class="elimina" @click="onDelete">Elimina libro</button>
+-     <!-- <p v-if="error">{{ error }}</p> -->
+-   </div>
+-diff --git a/biblioblab-vue-frontend/src/views/CatalogoView.vue b/biblioblab-vue-frontend/src/views/CatalogoView.vue
+-index 1b60197..c3da87d 100644
+---- a/biblioblab-vue-frontend/src/views/CatalogoView.vue
+-+++ b/biblioblab-vue-frontend/src/views/CatalogoView.vue
+-@@ -8,6 +8,7 @@ const libri = ref([])
+- const idInEvidenza = ref(new Set())
++-         // Populate form with existing data
++-    libro.titolo = result.titolo || ''
++-    libro.autore_oggetto.cognome = result.autore_oggetto.cognome || ''
++-    libro.isbn = result.isbn || ''
++-    libro.anno_pubblicazione = result.anno_pubblicazione || null
++-    libro.categorie[0] = result.categorie[0] || []
++-    libro.disponibile = result.disponibile !== undefined ? result.disponibile : true
++-    libro.descrizione = result.descrizione || ''
++-    libro.cover_url = result.cover_url || ''
+++      const autore = `${result.autore_oggetto.nome} ${result.autore_oggetto.cognome}`
+++      console.log({ autore: autore })
+++      // Populate form with existing data
+++      libro.titolo = result.titolo || ''
+++      libro.autore = result.autore || ''
+++      libro.isbn = result.isbn || ''
+++      libro.anno_pubblicazione = result.anno_pubblicazione || null
+++      libro.categorie = result.categorie[0] || []
+++      libro.disponibile = result.disponibile !== undefined ? result.disponibile : true
+++      libro.descrizione = result.descrizione || ''
+++      libro.cover_url = result.cover_url || ''
++       console.log({ libro: libro.value })
++     } catch (err) {
++       console.log('Error:', err.message)
++@@ -72,8 +73,6 @@ const props = defineProps({
++   },
++ })
+  
+- const evidenzia = (id) => {
+-+  localStorage.getItem('preferiti')
+-   if (idInEvidenza.value.has(id)) {
+-     idInEvidenza.value.delete(id)
+-   } else {
+-@@ -16,6 +17,7 @@ const evidenzia = (id) => {
+-   // Ricrea il Set per reattività Vue
+-   idInEvidenza.value = new Set(idInEvidenza.value)
+-   console.log({ inEvidenza: inEvidenza.value(id) })
+-+  localStorage.setItem('preferiti', JSON.stringify(Array.from(idInEvidenza.value)))
+- }
++-
++-
++ const formValido = computed(() => libro.titolo.trim() !== '')
+  
+- const inEvidenza = computed(() => {
+-@@ -30,11 +32,23 @@ const libriDisponibili = computed(() => {
+- const totaleLibri = computed(() => libri.value.length)
++ // const nomeCompleto = computed(() => autori.value.map((a) => a.nome + ' ' + a.cognome))
++@@ -82,27 +81,13 @@ const salva = async () => {
++   console.log({ isAuthenticated: authStore.isAuthenticated, utente: authStore.utente })
+  
+- onMounted(async () => {
+--  libri.value = await libriComp.getLibri(`/api/v1/libri/`) //using proxy server (vite.config.js)
+-+  //First load from localStorage
+-+    const stored = localStorage.getItem('preferiti')
+-+  if (stored) {
+-+  try{
+-+    const parsed = JSON.parse(stored)
+-+    idInEvidenza.value = new Set(parsed)
+-+  } catch(err){
+-+    console.error('Error getting preferiti from localStorage', err.message)
+-+  }
+-+}
+-+// Then fetch the book
+-+libri.value = await libriComp.getLibri(`/api/v1/libri/`) //using proxy server (vite.config.js)
+-   // libri.value = await libriComp.getLibri(`http://localhost:8000/api/libri/`)
+-   console.log({libriComp: libri.value})
+- })
++   try {
++-    // const result = await libriComp.newLibro(`/api/v1/libri/`, libro) //using vite proxy server (vite.config.js)
++-    // emit('saved', result)
++-    // console.log('Success', result)
++-    // success.value = `Libro ${libro.titolo} salvato correttamente`
++-
++     let result
+  
+-+
+- const rimuoviLibro = (id) => libri.value = libri.value.filter(l => l.id !== id)
++     if (props.isEdit && props.idLibro) {
++       // Update existing book
++       result = await libriComp.updateLibro(`/api/v1/libri/${props.idLibro}/`, libro)
++ 
++-    //   // Populate form with existing data
++-    // libro.titolo = result.titolo || ''
++-    // libro.autore_oggetto.cognome = result.autore_oggetto.cognome || ''
++-    // libro.isbn = result.isbn || ''
++-    // libro.anno_pubblicazione = result.anno_pubblicazione || null
++-    // libro.categorie[0] = result.categorie[0] || []
++-    // libro.disponibile = result.disponibile !== undefined ? result.disponibile : true
++-    // libro.descrizione = result.descrizione || ''
++-    // libro.cover_url = result.cover_url || ''
++-      console.log({result : result})
+++      console.log({ result: result })
++       emit('updated', result)
++       success.value = `Libro "${libro.titolo}" aggiornato correttamente`
++     } else {
++@@ -131,15 +116,14 @@ const salva = async () => {
++   }
++ }
++ 
++-
++ const emit = defineEmits(['saved', 'updated'])
+  </script>
+  
++ <template>
++-  <h2>{{isEdit? 'Modifica libro' :'Inserisci nuovo libro'}}</h2>
+++  <h2>{{ isEdit ? 'Modifica libro' : 'Inserisci nuovo libro' }}</h2>
++ 
++   <form @submit.prevent="salva" class="form">
++-    <LoadingSpinner v-if="loading"/>
+++    <LoadingSpinner v-if="loading" />
++ 
++     <input type="text" v-model="libro.titolo" placeholder="titolo" required />
++ 
++diff --git a/biblioblab-vue-frontend/src/composable/useLibri.js b/biblioblab-vue-frontend/src/composable/useLibri.js
++index 648b872..740f677 100644
++--- a/biblioblab-vue-frontend/src/composable/useLibri.js
+++++ b/biblioblab-vue-frontend/src/composable/useLibri.js
++@@ -109,10 +109,10 @@ export function useLibri() {
++   const updateLibro = async (url, libroData) => {
++     try {
++       const response = await fetch(url, {
++-        method: 'PUT', // or 'PATCH' if you want partial updates
+++        method: 'PATCH', // or 'PATCH' if you want partial updates
++         headers: {
++           'Content-Type': 'application/json',
++-          // Add authorization headers if needed
+++          'X-CSRFToken': authStore.getCsrf(),
++         },
++         body: JSON.stringify(libroData),
++       })
