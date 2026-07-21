@@ -36,7 +36,6 @@ export function useLibri() {
         throw new Error(`Errore recuperando il libro ${libro.value.titolo}: ${res.status} ${res.statusText}`)
       const data = await res.json()
       libro.value = data
-      console.log({ data: libro.value })
       return data
     } catch (err) {
       console.error('Errore nel recupero del libro', err.message)
@@ -52,7 +51,6 @@ export function useLibri() {
 
       const data = await res.json()
       autori.value = data.results || data
-      console.log({ autori: autori.value })
       return autori.value
     } catch (err) {
       console.error('Errore catturato recuperando gli autori', err.message)
@@ -71,7 +69,6 @@ export function useLibri() {
         throw new Error('Errore nel recupero delle categorie', res.status, res.statusText)
       const data = await res.json()
       categorie.value = data.results
-      console.log({ categorie: categorie.value })
       return categorie.value
     } catch (err) {
       console.error('Errore catturato recuperando le categorie', err.message)
@@ -95,7 +92,6 @@ export function useLibri() {
         throw new Error(`Error creating a book: ${res.status}, ${res.statusText}`)
       }
       const data = await res.json()
-      console.log({ nuovoLibro: data })
       libri.value.push(data)
       return data
     } catch (err) {

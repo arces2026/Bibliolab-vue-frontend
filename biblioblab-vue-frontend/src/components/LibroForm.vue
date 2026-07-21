@@ -14,6 +14,7 @@ const authStore = useAuthStore()
 const autori = ref([])
 const categ = ref([])
 
+// Value are given to this reactive const if we are modifying a libro
 const libro = reactive({
   titolo: '',
   autore_oggetto: null,
@@ -28,7 +29,6 @@ const libro = reactive({
 onMounted(async () => {
   try {
     autori.value = await libriComp.getAutori('/api/v1/autori/') //django api view da creare
-    console.log({ autori: autori.value })
   } catch (err) {
     console.error('Errore nel recupero degli autori', err.message)
   }
@@ -44,20 +44,17 @@ onMounted(async () => {
     try {
       let result = await libriComp.getLibro(`/api/v1/libri/${props.idLibro}`)
 
-      const autore = `${result.autore_oggetto.nome} ${result.autore_oggetto.cognome}`
-      console.log({ autore: autore })
       // Populate form with existing data
       libro.titolo = result.titolo || ''
-      libro.autore = result.autore || ''
+      libro.autore = result.autore || '' // it returns autore.id that in the select matches the full autore name
       libro.isbn = result.isbn || ''
       libro.anno_pubblicazione = result.anno_pubblicazione || null
       libro.categorie = result.categorie[0] || []
       libro.disponibile = result.disponibile !== undefined ? result.disponibile : true
       libro.descrizione = result.descrizione || ''
       libro.cover_url = result.cover_url || ''
-      console.log({ libro: libro.value })
     } catch (err) {
-      console.log('Error:', err.message)
+      console.error('Error:', err.message)
     }
   }
 })
@@ -78,23 +75,19 @@ const formValido = computed(() => libro.titolo.trim() !== '')
 // const nomeCompleto = computed(() => autori.value.map((a) => a.nome + ' ' + a.cognome))
 
 const salva = async () => {
-  console.log({ isAuthenticated: authStore.isAuthenticated, utente: authStore.utente })
-
   try {
     let result
 
     if (props.isEdit && props.idLibro) {
       // Update existing book
       result = await libriComp.updateLibro(`/api/v1/libri/${props.idLibro}/`, libro)
-
-      console.log({ result: result })
       emit('updated', result)
       success.value = `Libro "${libro.titolo}" aggiornato correttamente`
     } else {
       // Create new book
       result = await libriComp.newLibro(`/api/v1/libri/`, libro)
       emit('saved', result)
-      success.value = `Libro "${libro.titolo}" salvato correttamente`
+      success.value = `Libro "${libro.titolo}" salvato correttamente. Reindirizzamento...`
 
       // Reset form for new book (optional)
       if (!props.isEdit) {
@@ -150,8 +143,8 @@ const emit = defineEmits(['saved', 'updated'])
     <input type="url" v-model="libro.cover_url" placeholder="Inserisci URL cover..." />
     <textarea name="" id="" v-model="libro.descrizione"></textarea>
     <button :disabled="!formValido || loading">{{ isEdit ? 'Aggiorna' : 'Salva' }}</button>
-    <p v-if="success">{{ success }}</p>
-    <p v-else>{{ error }}</p>
+    <p v-if="success" class="para success">{{ success }}</p>
+    <p v-else class="para error">{{ error }}</p>
   </form>
 </template>
 
@@ -201,5 +194,18 @@ button:disabled {
   background-color: gray;
   scale: 0.95;
   cursor: not-allowed;
+}
+
+.para {
+ font-size: 1.5rem;
+  text-align: center;
+}
+
+.para.success {
+  color: green;
+}
+
+.para.error {
+  color: red;
 }
 </style>

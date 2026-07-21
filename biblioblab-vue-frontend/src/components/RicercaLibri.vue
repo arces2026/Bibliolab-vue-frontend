@@ -21,7 +21,6 @@ onMounted(async() => {
     }
     const data = await res.json()
     libri.value = data.results
-    console.log({libriData: libri.value})
   }catch(err){
     console.error('Error fetching onMounted', err)
   }
@@ -52,13 +51,11 @@ watch(filtro, (newFiltro, oldFiltro) => {
       }
       const data = await res.json()
       libri.value = data.results
-      console.log({ libri: libri.value, results: data.results })
     } catch (err) {
       console.error('Error while fetching libri', err)
     } finally {
-      console.log({ newFiltro: newFiltro, oldFiltro: oldFiltro })
+      loading.value = false
     }
-    loading.value = false
   }, 300)
 })
 
@@ -80,7 +77,6 @@ const libriFiltrati = computed(() => {
     const titolo = (l.titolo || '').toLowerCase()
     const autore = (l.autore.nome || '').toLowerCase()
     const search = filtro.value.toLowerCase()
-    console.log({ resultfiler: titolo.includes(search) || autore.includes(search)})
     return titolo.includes(search) || autore.includes(search)
   })
 })
@@ -97,7 +93,6 @@ const getLibriByGenere = async() => {
       if (genereSelezionato.value !== 'Tutti'){
 
       libriFiltratiPerGenere.value = libri.value.filter((l) => l.categorie?.includes(genereSelezionato.value))
-      console.log({bookByGenre: libriFiltratiPerGenere.value})
       } else {
         libriFiltratiPerGenere.value = libri.value
       }

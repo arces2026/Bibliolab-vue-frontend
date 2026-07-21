@@ -16,14 +16,14 @@ const preferiti = (id) => {
   }
   // Ricrea il Set per reattività Vue
   arrayPreferiti.value = new Set(arrayPreferiti.value)
-  console.log({ preferito: preferito.value(id) })
+  // console.log({ preferito: preferito.value(id) })
   localStorage.setItem('preferiti', JSON.stringify(Array.from(arrayPreferiti.value)))
 }
 
-const preferito = computed(() => {
-  //has() for set includes() for array
-  return (id) => arrayPreferiti.value.has(id)
-})
+// const preferito = computed(() => {
+//   //has() for set includes() for array
+//   return (id) => arrayPreferiti.value.has(id)
+// })
 
 const libriDisponibili = computed(() => {
   return libri.value.filter(l => l.disponibile).length
@@ -45,7 +45,6 @@ onMounted(async () => {
 // Then fetch the book
 libri.value = await libriComp.getLibri(`/api/v1/libri/`) //using proxy server (vite.config.js)
   // libri.value = await libriComp.getLibri(`http://localhost:8000/api/libri/`)
-  console.log({libriComp: libri.value})
 })
 
 

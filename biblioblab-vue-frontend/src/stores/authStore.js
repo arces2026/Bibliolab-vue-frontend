@@ -19,8 +19,8 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
 
     try {
-      console.log('📝 Registering with data:', userData)
-      console.log('🔑 CSRF Token being sent:', getCsrf())
+      // console.log('📝 Registering with data:', userData)
+      // console.log('🔑 CSRF Token being sent:', getCsrf())
 
       const res = await fetch(`${API_BASE}register/`, {
         method: 'POST',
@@ -37,7 +37,7 @@ export const useAuthStore = defineStore('auth', () => {
          }
 
       const data = await res.json()
-      console.log('📦 Response:', { status: res.status, data: res.statusText})
+      // console.log('📦 Response:', { status: res.status, data: res.statusText})
       success.value = 'Registrazione avvenuta con successo. Redirecting...'
       // Auto-login after Registration
       await login(userData.username, userData.password)
@@ -74,7 +74,6 @@ export const useAuthStore = defineStore('auth', () => {
       if (!res.ok) throw new Error(`Credenziali non valide: ${res.status} ${res.statusText}`)
 
       utente.value = await res.json()
-      console.log({ utente: utente.value })
       isAuthenticated.value = true
       //  const redirect = route.query.redirect || '/libri'
       //  router.push(redirect)
@@ -115,7 +114,7 @@ export const useAuthStore = defineStore('auth', () => {
       const userData = await res.json()
       utente.value = userData
       isAuthenticated.value = true
-      console.log('✅ User session restored:', userData)
+      // console.log('✅ User session restored:', userData)
       return userData
     } catch (err) {
       console.error('❌ Errore caricando utente:', err)

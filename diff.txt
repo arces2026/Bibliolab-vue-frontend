@@ -1,70 +1,110 @@
-diff --git a/biblioblab-vue-frontend/src/components/LibroCard.vue b/biblioblab-vue-frontend/src/components/LibroCard.vue
-index 2da908e..f15de39 100644
---- a/biblioblab-vue-frontend/src/components/LibroCard.vue
-+++ b/biblioblab-vue-frontend/src/components/LibroCard.vue
-@@ -33,7 +33,7 @@
-       ><span :class="disponibile ? 'green' : 'red'">{{
-         disponibile ? 'disponibile' : 'non disponibile'
-       }}</span>
--      <button v-if="authStore.isStaff" @click="onEvidenzia(id)" class="evidenzia">Evidenzia ⭐</button>
-+      <button  @click="onEvidenzia(id)" class="evidenzia">Preferiti ⭐</button>
-     </section>
+diff --git a/biblioblab-vue-frontend/src/components/LibroForm.vue b/biblioblab-vue-frontend/src/components/LibroForm.vue
+index 1a2e5fe..2c79d05 100644
+--- a/biblioblab-vue-frontend/src/components/LibroForm.vue
++++ b/biblioblab-vue-frontend/src/components/LibroForm.vue
+@@ -39,21 +39,22 @@ onMounted(async () => {
+     console.error('Errore nel recupero delle categorie', err.message)
+   }
  
-     <section class="footer">
-@@ -41,9 +41,9 @@
-     </section>
+-
+   // Fetch book data if editing
+   if (props.isEdit && props.idLibro) {
+     try {
+       let result = await libriComp.getLibro(`/api/v1/libri/${props.idLibro}`)
  
-      <!-- Debug info -->
--  <pre>isStaff: {{ authStore.isStaff }}</pre>
-+  <!-- <pre>isStaff: {{ authStore.isStaff }}</pre>
-   <pre>utente: {{ authStore.utente }}</pre>
--  <pre>isAuthenticated: {{ authStore.isAuthenticated }}</pre>
-+  <pre>isAuthenticated: {{ authStore.isAuthenticated }}</pre> -->
-     <button v-if="authStore.isStaff" class="elimina" @click="onDelete">Elimina libro</button>
-     <!-- <p v-if="error">{{ error }}</p> -->
-   </div>
-diff --git a/biblioblab-vue-frontend/src/views/CatalogoView.vue b/biblioblab-vue-frontend/src/views/CatalogoView.vue
-index 1b60197..c3da87d 100644
---- a/biblioblab-vue-frontend/src/views/CatalogoView.vue
-+++ b/biblioblab-vue-frontend/src/views/CatalogoView.vue
-@@ -8,6 +8,7 @@ const libri = ref([])
- const idInEvidenza = ref(new Set())
- 
- const evidenzia = (id) => {
-+  localStorage.getItem('preferiti')
-   if (idInEvidenza.value.has(id)) {
-     idInEvidenza.value.delete(id)
-   } else {
-@@ -16,6 +17,7 @@ const evidenzia = (id) => {
-   // Ricrea il Set per reattività Vue
-   idInEvidenza.value = new Set(idInEvidenza.value)
-   console.log({ inEvidenza: inEvidenza.value(id) })
-+  localStorage.setItem('preferiti', JSON.stringify(Array.from(idInEvidenza.value)))
- }
- 
- const inEvidenza = computed(() => {
-@@ -30,11 +32,23 @@ const libriDisponibili = computed(() => {
- const totaleLibri = computed(() => libri.value.length)
- 
- onMounted(async () => {
--  libri.value = await libriComp.getLibri(`/api/v1/libri/`) //using proxy server (vite.config.js)
-+  //First load from localStorage
-+    const stored = localStorage.getItem('preferiti')
-+  if (stored) {
-+  try{
-+    const parsed = JSON.parse(stored)
-+    idInEvidenza.value = new Set(parsed)
-+  } catch(err){
-+    console.error('Error getting preferiti from localStorage', err.message)
-+  }
-+}
-+// Then fetch the book
-+libri.value = await libriComp.getLibri(`/api/v1/libri/`) //using proxy server (vite.config.js)
-   // libri.value = await libriComp.getLibri(`http://localhost:8000/api/libri/`)
-   console.log({libriComp: libri.value})
+-         // Populate form with existing data
+-    libro.titolo = result.titolo || ''
+-    libro.autore_oggetto.cognome = result.autore_oggetto.cognome || ''
+-    libro.isbn = result.isbn || ''
+-    libro.anno_pubblicazione = result.anno_pubblicazione || null
+-    libro.categorie[0] = result.categorie[0] || []
+-    libro.disponibile = result.disponibile !== undefined ? result.disponibile : true
+-    libro.descrizione = result.descrizione || ''
+-    libro.cover_url = result.cover_url || ''
++      const autore = `${result.autore_oggetto.nome} ${result.autore_oggetto.cognome}`
++      console.log({ autore: autore })
++      // Populate form with existing data
++      libro.titolo = result.titolo || ''
++      libro.autore = result.autore || ''
++      libro.isbn = result.isbn || ''
++      libro.anno_pubblicazione = result.anno_pubblicazione || null
++      libro.categorie = result.categorie[0] || []
++      libro.disponibile = result.disponibile !== undefined ? result.disponibile : true
++      libro.descrizione = result.descrizione || ''
++      libro.cover_url = result.cover_url || ''
+       console.log({ libro: libro.value })
+     } catch (err) {
+       console.log('Error:', err.message)
+@@ -72,8 +73,6 @@ const props = defineProps({
+   },
  })
  
-+
- const rimuoviLibro = (id) => libri.value = libri.value.filter(l => l.id !== id)
+-
+-
+ const formValido = computed(() => libro.titolo.trim() !== '')
+ 
+ // const nomeCompleto = computed(() => autori.value.map((a) => a.nome + ' ' + a.cognome))
+@@ -82,27 +81,13 @@ const salva = async () => {
+   console.log({ isAuthenticated: authStore.isAuthenticated, utente: authStore.utente })
+ 
+   try {
+-    // const result = await libriComp.newLibro(`/api/v1/libri/`, libro) //using vite proxy server (vite.config.js)
+-    // emit('saved', result)
+-    // console.log('Success', result)
+-    // success.value = `Libro ${libro.titolo} salvato correttamente`
+-
+     let result
+ 
+     if (props.isEdit && props.idLibro) {
+       // Update existing book
+       result = await libriComp.updateLibro(`/api/v1/libri/${props.idLibro}/`, libro)
+ 
+-    //   // Populate form with existing data
+-    // libro.titolo = result.titolo || ''
+-    // libro.autore_oggetto.cognome = result.autore_oggetto.cognome || ''
+-    // libro.isbn = result.isbn || ''
+-    // libro.anno_pubblicazione = result.anno_pubblicazione || null
+-    // libro.categorie[0] = result.categorie[0] || []
+-    // libro.disponibile = result.disponibile !== undefined ? result.disponibile : true
+-    // libro.descrizione = result.descrizione || ''
+-    // libro.cover_url = result.cover_url || ''
+-      console.log({result : result})
++      console.log({ result: result })
+       emit('updated', result)
+       success.value = `Libro "${libro.titolo}" aggiornato correttamente`
+     } else {
+@@ -131,15 +116,14 @@ const salva = async () => {
+   }
+ }
+ 
+-
+ const emit = defineEmits(['saved', 'updated'])
  </script>
  
+ <template>
+-  <h2>{{isEdit? 'Modifica libro' :'Inserisci nuovo libro'}}</h2>
++  <h2>{{ isEdit ? 'Modifica libro' : 'Inserisci nuovo libro' }}</h2>
+ 
+   <form @submit.prevent="salva" class="form">
+-    <LoadingSpinner v-if="loading"/>
++    <LoadingSpinner v-if="loading" />
+ 
+     <input type="text" v-model="libro.titolo" placeholder="titolo" required />
+ 
+diff --git a/biblioblab-vue-frontend/src/composable/useLibri.js b/biblioblab-vue-frontend/src/composable/useLibri.js
+index 648b872..740f677 100644
+--- a/biblioblab-vue-frontend/src/composable/useLibri.js
++++ b/biblioblab-vue-frontend/src/composable/useLibri.js
+@@ -109,10 +109,10 @@ export function useLibri() {
+   const updateLibro = async (url, libroData) => {
+     try {
+       const response = await fetch(url, {
+-        method: 'PUT', // or 'PATCH' if you want partial updates
++        method: 'PATCH', // or 'PATCH' if you want partial updates
+         headers: {
+           'Content-Type': 'application/json',
+-          // Add authorization headers if needed
++          'X-CSRFToken': authStore.getCsrf(),
+         },
+         body: JSON.stringify(libroData),
+       })

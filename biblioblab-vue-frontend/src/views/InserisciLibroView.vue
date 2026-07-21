@@ -1,19 +1,21 @@
 <script setup>
-import { useRouter} from 'vue-router'
-import LibroForm from '@/components/LibroForm.vue';
-import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import LibroForm from '@/components/LibroForm.vue'
 
-const success = ref(null)
 
-const onSuccess = (libro) => {
-  // alert(`Libro ${libro.titolo} salvato con successo`)
-  // router.push('/libri')
-  success.value = `${libro.titolo} salvato con successo!`
+const router = useRouter()
+
+const onSuccess = () => {
+  setTimeout(() => {
+    router.push('/libri')
+  }, 1500)
 }
-
 </script>
 
 <template>
-<LibroForm @saved="onSuccess"/>
-<p v-if="success">{{ success }}</p>
+  <LibroForm @saved="onSuccess" />
 </template>
+
+<style scoped>
+
+</style>

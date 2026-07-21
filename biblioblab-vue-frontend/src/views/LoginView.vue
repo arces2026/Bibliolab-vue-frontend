@@ -13,13 +13,11 @@ const error = ref('')
 const loading = ref(false)
 
 const onLogin = async() => {
-  console.log({loginView: 'Login started'})
   error.value = ''
   loading.value = true
   try {
-    const test = await authStore.login(form.username, form.password)
+    await authStore.login(form.username, form.password)
     // Dopo il login, torna dove l'utente voleva andare
-    console.log({test: test})
     const redirect = route.query.redirect || '/libri'
     router.push(redirect)
   }catch(err){

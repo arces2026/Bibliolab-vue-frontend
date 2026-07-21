@@ -2,8 +2,10 @@
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useLibri } from '@/composable/useLibri'
+import { useAuthStore } from '@/stores/authStore'
 
 const route = useRoute()
+const authStore = useAuthStore()
 const libro = ref({})
 const compLibro = useLibri()
 const id = ref(null)
@@ -24,7 +26,7 @@ onMounted(async () => {
       <div class="libro-content">
         <div class="libro-header">
           <h2>{{ libro.titolo }}</h2>
-          <RouterLink :to="{ name: 'modifica-libro', params: { id: id } }">Modifica</RouterLink>
+          <RouterLink v-if="authStore.utente && authStore.isStaff" :to="{ name: 'modifica-libro', params: { id: id } }">Modifica</RouterLink>
           <span
             class="status"
             :class="{ available: libro.disponibile, unavailable: !libro.disponibile }"
