@@ -129,6 +129,7 @@ hr {
   border-color: rgba(245, 242, 242, 0.021);
   box-shadow: 1px 1px 10px;
 }
+
 .container {
   position: relative;
   width: 100%;
@@ -137,7 +138,8 @@ hr {
   height: 100%;
   min-height: 250px;
   display: grid;
-  grid-template-columns: 120px 1fr; /* Fixed width for cover, fluid for content */
+  grid-template-columns: 120px minmax(120px, 1fr); /* Fixed width for cover, fluid for content */
+  /* grid-template-columns: 120px 1fr; Fixed width for cover, fluid for content */
   grid-template-rows: auto auto auto auto; /* Let rows adjust based on content size */
   gap: 8px;
   padding: 12px;
@@ -182,6 +184,8 @@ hr {
 h3 {
   margin: 10px;
   text-align: center;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .header {
