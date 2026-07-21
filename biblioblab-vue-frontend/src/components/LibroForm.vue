@@ -2,14 +2,13 @@
 import { computed, reactive, ref, onMounted } from 'vue'
 import { useLibri } from '@/composable/useLibri'
 import LoadingSpinner from './LoadingSpinner.vue'
-import { useAuthStore } from '@/stores/authStore.js'
+
 
 const libriComp = useLibri()
 const success = ref('')
 const error = ref('')
 const loading = ref(false)
-const authStore = useAuthStore()
-// const libro = ref({})
+
 
 const autori = ref([])
 const categ = ref([])
@@ -82,12 +81,12 @@ const salva = async () => {
       // Update existing book
       result = await libriComp.updateLibro(`/api/v1/libri/${props.idLibro}/`, libro)
       emit('updated', result)
-      success.value = `Libro "${libro.titolo}" aggiornato correttamente`
+      // success.value = `Libro "${libro.titolo}" aggiornato correttamente`
     } else {
       // Create new book
       result = await libriComp.newLibro(`/api/v1/libri/`, libro)
       emit('saved', result)
-      success.value = `Libro "${libro.titolo}" salvato correttamente. Reindirizzamento...`
+      // success.value = `Libro "${libro.titolo}" salvato correttamente. Reindirizzamento...`
 
       // Reset form for new book (optional)
       if (!props.isEdit) {
@@ -105,7 +104,7 @@ const salva = async () => {
     }
   } catch (err) {
     console.log('Caught err', err.message)
-    error.value = `Errore nel salvataggio del libro: ${err.message}`
+    error.value = `Errore nel salvataggio del libro`
   }
 }
 
