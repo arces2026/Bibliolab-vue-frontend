@@ -39,16 +39,6 @@ const props = defineProps({
   },
 })
 
-// const onDelete = async () => {
-//   try {
-//     const result = await compoLibro.eliminaLibro(`/api/v1/libri/${props.id}/`)
-//     emit('delete', props.id)
-//     console.log('Libro eliminato con successo', result)
-//   } catch (err) {
-//     console.error("Errore durante l'eliminazione", err.message)
-//     alert("Errore durante l'eliminazione:" + err.message)
-//   }
-// }
 
 // Create a computed property for the cover URL
 const coverUrl = computed(() => {
@@ -142,11 +132,11 @@ hr {
   grid-template-columns: 120px minmax(120px, 1fr); /* Fixed width for cover, fluid for content */
   /* grid-template-columns: 120px 1fr; Fixed width for cover, fluid for content */
   grid-template-rows: auto auto auto auto; /* Let rows adjust based on content size */
-  gap: 8px;
+  gap: 16px;
   padding: 12px;
   border-radius: 10px;
   box-shadow: 1px 1px 12px;
-  background-color: #ffffff;
+  background-color: rgb(225, 225, 236);
   transition: all 0.2s ease;
 }
 
@@ -180,6 +170,7 @@ hr {
 .image:hover {
   scale: 1.05;
   border: 1px solid blue;
+  box-shadow: 3px 3px 6px black;
 }
 
 h3 {
@@ -229,14 +220,20 @@ h3 {
   width: 80%;
   margin: auto;
   border-radius: 5px;
+  background-color: rgb(120, 120, 180);
   transition: background-color 0.2s ease-in-out;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.evidenzia:hover {
-  background-color: rgb(115, 138, 189);
+.add-preferiti:hover {
+  background-color: rgb(143, 143, 173);
   scale: 1.05;
   border: 1px solid blue;
+  box-shadow: 3px 3px 6px black;
+}
+
+.add-preferiti:active {
+  scale: 0.9;
 }
 </style>

@@ -27,5 +27,7 @@ onMounted(async() => {
 </template>
 
 <style scoped>
-
+#div {
+  background-color: brown;
+}
 </style>

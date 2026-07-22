@@ -3,8 +3,10 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 const routes = [
   {
-    path: '/',
-    redirect: '/libri',
+    path: '/about',
+    name: 'about',
+    component: () => import ('@/views/AboutView.vue'),
+    meta: { titoloPagina: 'About'}
   },
   {
     path: '/libri',

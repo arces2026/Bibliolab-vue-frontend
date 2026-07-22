@@ -131,10 +131,12 @@ const isDeleting = (id) => deletingIds.value.has(id)
            - Each LibroCard is wrapped by TransitionGroup for animation
            - ':class' binding dynamically adds 'card-deleting' class when isDeleting() is true
            - The 'card-deleting' class triggers the CSS animation -->
-      <div class="parent">
-        <LibroCard
-          v-for="libro in libri"
+      <div class="parent"
+        v-for="libro in libri"
           :key="libro.id"
+      >
+        <LibroCard
+
           v-bind="libro"
           @addPreferiti="preferiti"
           @onDelete="removeConfirmation"
@@ -147,6 +149,11 @@ const isDeleting = (id) => deletingIds.value.has(id)
 </template>
 
 <style scoped>
+h2 {
+  text-align: center;
+  margin: 20px;
+}
+
 /* DELETION ANIMATION - STEP 9: Transition classes for Vue's TransitionGroup */
 .card-enter-active, /*Not used, it's for added cards */
 .card-leave-active {
@@ -202,7 +209,8 @@ const isDeleting = (id) => deletingIds.value.has(id)
 }
 
 .container {
-  background-color: #f5f5f4;
+  background-color: rgb(120, 120, 180);
+  padding: 20px;
 }
 
 h1 {
@@ -230,5 +238,6 @@ h1 {
      - Not directly related to deletion, but ensures consistent animations
      - Applies to any property changes on the card */
   transition: all 0.3s ease;
+  background-color: rgb(152, 152, 177);
 }
 </style>
