@@ -1,10 +1,8 @@
 <script setup>
-import { useLibri } from '@/composable/useLibri.js'
 import { useAuthStore } from '@/stores/authStore'
 import { computed } from 'vue'
 
 const authStore = useAuthStore()
-const compoLibro = useLibri()
 // const error = ref(null)
 
 const props = defineProps({
@@ -41,16 +39,16 @@ const props = defineProps({
   },
 })
 
-const onDelete = async () => {
-  try {
-    const result = await compoLibro.eliminaLibro(`/api/v1/libri/${props.id}/`)
-    emit('delete', props.id)
-    console.log('Libro eliminato con successo', result)
-  } catch (err) {
-    console.error("Errore durante l'eliminazione", err.message)
-    alert("Errore durante l'eliminazione:" + err.message)
-  }
-}
+// const onDelete = async () => {
+//   try {
+//     const result = await compoLibro.eliminaLibro(`/api/v1/libri/${props.id}/`)
+//     emit('delete', props.id)
+//     console.log('Libro eliminato con successo', result)
+//   } catch (err) {
+//     console.error("Errore durante l'eliminazione", err.message)
+//     alert("Errore durante l'eliminazione:" + err.message)
+//   }
+// }
 
 // Create a computed property for the cover URL
 const coverUrl = computed(() => {
@@ -60,7 +58,9 @@ const coverUrl = computed(() => {
   )
 })
 
-const emit = defineEmits(['addPreferiti', 'delete'])
+const emit = defineEmits(['addPreferiti', 'onDelete'])
+
+const onDelete = () => emit('onDelete', props.id)
 
 const addPreferiti = () => emit('addPreferiti', props.id)
 </script>
@@ -102,6 +102,7 @@ const addPreferiti = () => emit('addPreferiti', props.id)
     </section>
 
     <button v-if="authStore.isStaff" class="elimina" @click="onDelete">Elimina libro</button>
+    <!-- <button v-if="authStore.isStaff" class="elimina" @click="onDelete">Elimina libro</button> -->
   </div>
 </template>
 

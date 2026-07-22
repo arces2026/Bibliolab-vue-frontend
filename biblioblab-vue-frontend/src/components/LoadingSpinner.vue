@@ -11,6 +11,12 @@
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 30% auto;
+  /* Center positioning */
+  position: fixed;
+  top: 5%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
 }
 
 @keyframes spin {
