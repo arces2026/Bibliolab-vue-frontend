@@ -8,7 +8,7 @@ const authStore = useAuthStore()
 <template>
   <nav class="navbar">
       <RouterLink to="/about" class="logo" >Bibliolab</RouterLink>
-      <RouterLink :to="{name: 'catalogo'}" class="navbar-link">Libri</RouterLink>
+      <!-- <RouterLink :to="{name: 'catalogo'}" class="navbar-link">Libri</RouterLink> -->
       <RouterLink v-if="authStore.utente && authStore.isStaff" :to="{name: 'inserisci-libro'}" class="navbar-link">Inserisci libro</RouterLink>
       <RouterLink :to="{name: 'ricerca'}" class="navbar-link">Ricerca Libri</RouterLink>
       <RouterLink :to="{name: 'login'}" v-if="!authStore.isLogged" class="navbar-link">Login</RouterLink>

@@ -8,12 +8,12 @@ const routes = [
     component: () => import ('@/views/AboutView.vue'),
     meta: { titoloPagina: 'About'}
   },
-  {
-    path: '/libri',
-    name: 'catalogo',
-    component: () => import('@/views/CatalogoView.vue'),
-    meta: { titoloPagina: 'Catalogo Libri' },
-  },
+  // {
+  //   path: '/libri',
+  //   name: 'catalogo',
+  //   component: () => import('@/views/CatalogoView.vue'),
+  //   meta: { titoloPagina: 'Catalogo Libri' },
+  // },
   {
     path: `/libri/:id`,
     name: 'libro',

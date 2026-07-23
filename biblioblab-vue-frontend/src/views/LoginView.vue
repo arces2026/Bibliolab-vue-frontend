@@ -18,7 +18,7 @@ const onLogin = async() => {
   try {
     await authStore.login(form.username, form.password)
     // Dopo il login, torna dove l'utente voleva andare
-    const redirect = route.query.redirect || '/libri'
+    const redirect = route.query.redirect || '/ricerca'
     router.push(redirect)
   }catch(err){
     error.value = err.message

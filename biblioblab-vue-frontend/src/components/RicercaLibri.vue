@@ -114,29 +114,31 @@ const libriFiltrati = computed(() => {
     class="modal"
     />
 
-  <h2>Ricerca libri</h2>
-  <h3>Ricerca per disponibilità, titolo o autore</h3>
+  <h1>Catalogo</h1>
+  <h3>Ricerca per titolo o autore</h3>
   <form class="form-container">
     <input type="text" v-model="filtro" placeholder="Inserisci testo..." />
     <div class="label">
-      <label for="disponibile">Solo disponibili</label>
+      <label for="disponibile">Mostra solo disponibili</label>
 
       <input id="disponibile" type="checkbox" v-model="soloDisponibili" />
+      </div>
       <CustomSelect v-model="genereSelezionato" :opzioni="generi" :text="text" />
-    </div>
+
   </form>
 
   <h3>{{ libriFiltrati.length }} libri trovati su {{ libri.length }}</h3>
-  <div class="parent">
+  <TransitionGroup name="card" tag="div" class="parent">
+  <div class="parent"  v-for="libro in libriFiltrati"
+      :key="libro.id">
     <LibroCard
-      v-for="libro in libriFiltrati"
-      :key="libro.id"
       v-bind="libro"
       @add-preferiti="togglePreferito"
       @on-delete="removeConfirmation"
       :preferito="arrayPreferiti.has(libro.id)"
-      :class="[libro-card, { 'card-deleting': isDeleting(libro.id)}]" />
+      :class="['libro-card', { 'card-deleting': isDeleting(libro.id)}]" />
   </div>
+  </TransitionGroup>
 </template>
 
 <style scoped>
@@ -146,6 +148,42 @@ const libriFiltrati = computed(() => {
   padding: 0;
 }
 
+.card-enter-active, /*Not used, it's for added cards */
+.card-leave-active {
+  transition: all 0.4s ease;
+}
+
+ /*  Not needed in this case*/
+.card-enter-from {
+  opacity: 0;
+  transform: translateY(30px) scale(0.9);
+}
+
+.card-leave-active {
+  position: absolute;
+  width: 100%;
+}
+
+.card-deleting {
+  opacity: 0 !important;
+  transform: scale(0.5) !important;
+  /* transform: translateX(-100px) scale(0.5) !important; */
+  transition: all 0.4s ease !important;
+}
+
+.parent {
+  position: relative; /* Needed for deletion animation (absolute children) */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 32px;
+}
+
+.libro-card {
+  grid-column: auto;
+  grid-row: auto;
+  transition: all 0.3s ease;
+  background-color: rgb(152, 152, 177);
+}
 .modal {
   z-index: 10;
 }
@@ -155,6 +193,7 @@ const libriFiltrati = computed(() => {
   margin: auto;
 }
 
+h1,
 h2,
 h3,
 h4 {

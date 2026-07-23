@@ -1,107 +1,495 @@
+diff --git a/biblioblab-vue-frontend/Animazione_su_elimina.md b/biblioblab-vue-frontend/Animazione_su_elimina.md
+new file mode 100644
+index 0000000..3b59bc3
+--- /dev/null
++++ b/biblioblab-vue-frontend/Animazione_su_elimina.md
+@@ -0,0 +1,181 @@
++# Animation Analysis: CatalogoView.vue
++
++## Overview
++
++This Vue component implements a smooth card-based catalog with two distinct animation types:
++1. **Entry animation** when the component renders
++2. **Exit animation** when a book card is deleted
++
++The animations are powered by Vue's `<TransitionGroup>` component and CSS transitions.
++
++---
++
++## 1. Entry Animation
++
++### Implementation
++
++The entry animation uses Vue's `card-enter-*` classes:
++
++```vue
++<TransitionGroup name="card" tag="div" class="parent">
++```
++
++### CSS Classes
++
++```css
++.card-enter-active {
++  transition: all 0.4s ease;
++}
++
++.card-enter-from {
++  opacity: 0;
++  transform: translateY(30px) scale(0.9);
++}
++```
++
++### Behavior
++
++- **`card-enter-from`**: Sets the initial state for new cards
++  - Fully transparent (opacity: 0)
++  - Shifted down 30px from final position
++  - Scaled down to 90% of final size
++
++- **`card-enter-active`**: Controls the transition timing
++  - Applies to both enter and leave states
++  - Uses `all` properties with 0.4s duration and `ease` timing function
++
++- **Result**: Cards smoothly fade in while moving upward and scaling to their final size
++
++---
++
++## 2. Exit (Deletion) Animation
++
++### Implementation
++
++The deletion animation uses a dynamic class `card-deleting`:
++
++```vue
++<LibroCard
++  :class="['libro-card', { 'card-deleting': isDeleting(libro.id) }]"
++/>
++```
++
++### CSS Classes
++
++```css
++.card-leave-active {
++  position: absolute;
++  width: 100%;
++}
++
++.card-deleting {
++  opacity: 0 !important;
++  transform: scale(0.5) !important;
++  transition: all 0.4s ease !important;
++}
++```
++
++### Behavior
++
++1. **Before deletion**: `isDeleting(libro.id)` returns `true`, applying `card-deleting` class
++2. **During deletion**: Vue's `card-leave-active` makes the card `position: absolute` and `width: 100%`
++3. **Animation**: The card fades out and scales down to 50% size over 0.4 seconds
++
++### Why `position: absolute`?
++
++The `card-leave-active` with `position: absolute` is crucial because:
++- It removes the card from the normal document flow during the exit animation
++- This prevents other cards from jumping/shifting immediately while the animation runs
++- Once the animation completes, the card is fully removed and the layout reflows naturally
++
++---
++
++## 3. Container Styling for Animation Support
++
++```css
++.parent {
++  position: relative; /* Critical for absolute children during deletion */
++  display: grid;
++  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
++  gap: 32px;
++}
++```
++
++- `position: relative` creates a positioning context for the absolutely positioned cards during deletion
++- Grid layout with `auto-fit` makes the cards responsive
++
++---
++
++## 4. Integration with Composable
++
++The deletion flow is managed by `useEliminaLibro` composable:
++
++```javascript
++const {
++  showModal,
++  loading,
++  removeConfirmation,
++  onConferma,
++  onAnnulla,
++  isDeleting,
++} = useEliminaLibro(libri)
++```
++
++- **`removeConfirmation`**: Triggered when delete button is clicked → opens modal
++- **`onConferma`**: Confirms deletion → triggers animation + data removal
++- **`isDeleting`**: Checks if a specific card is currently in deletion state
++
++---
++
++## Animation Flow Summary
++
++### User Deletes a Book:
++
++1. User clicks delete on `LibroCard`
++2. `removeConfirmation(libro.id)` is called
++3. Modal opens for confirmation
++4. On confirm → `onConferma()`:
++   - Sets `isDeleting(libro.id) = true`
++   - `card-deleting` class is applied
++   - Card animates: fades out + scales down (0.4s)
++   - After animation completes → card removed from DOM
++   - Data updated in the array
++
++### New Data Loads:
++
++1. Cards are fetched from API via `getLibri()`
++2. Each card triggers entry animation as it appears in the DOM
++3. Cards fade in from bottom while scaling up
++
++---
++
++## Key Animations Comparison
++
++| Property | Entry Animation | Exit Animation |
++|----------|----------------|----------------|
++| **Trigger** | Component mounted / Data added | User confirms deletion |
++| **Duration** | 0.4s | 0.4s |
++| **Effect** | Fade in + scale up + slide up | Fade out + scale down |
++| **Layout impact** | Smooth addition | Removed from flow during animation |
++| **Class used** | `card-enter-from` → `card-enter-to` | `card-deleting` + `card-leave-active` |
++
++---
++
++## Technical Notes
++
++1. **`!important` usage**: Used in `card-deleting` to ensure animation styles override other styles during the critical deletion moment
++
++2. **Keyframe animation vs CSS transitions**: This implementation uses CSS transitions for better performance and simpler code
++
++3. **TransitionGroup limitations**: The comment mentions that `card-enter-from` may not be needed in this specific case (possibly due to initial render optimization)
++
++4. **Positioning**: `position: absolute` during leave ensures smooth visual experience by preventing layout shift
++
++---
++
++## Potential Improvements
++
++1. **Add stagger effect**: Use `transition-delay` for sequential card animations
++2. **Swipe animation**: Add horizontal swipe during deletion for more visual variety
++3. **Undo functionality**: Could add reverse animation if user cancels deletion
++4. **Loading state integration**: Currently loading spinner covers the whole view during delete operation
+\ No newline at end of file
+diff --git a/biblioblab-vue-frontend/src/components/LibroForm.vue b/biblioblab-vue-frontend/src/components/LibroForm.vue
+index 7489bf1..73af2df 100644
+--- a/biblioblab-vue-frontend/src/components/LibroForm.vue
++++ b/biblioblab-vue-frontend/src/components/LibroForm.vue
+@@ -4,12 +4,11 @@ import { useLibri } from '@/composable/useLibri'
+ import LoadingSpinner from './LoadingSpinner.vue'
+ 
+ 
+-const libriComp = useLibri()
++const { getAutori, getCategorie, getLibro, newLibro, updateLibro } = useLibri()
+ const success = ref('')
+ const error = ref('')
+ const loading = ref(false)
+ 
+-
+ const autori = ref([])
+ const categ = ref([])
+ 
+@@ -27,13 +26,13 @@ const libro = reactive({
+ 
+ onMounted(async () => {
+   try {
+-    autori.value = await libriComp.getAutori('/api/v1/autori/') //django api view da creare
++    autori.value = await getAutori('/api/v1/autori/') //django api view da creare
+   } catch (err) {
+     console.error('Errore nel recupero degli autori', err.message)
+   }
+ 
+   try {
+-    categ.value = await libriComp.getCategorie('/api/v1/categorie/')
++    categ.value = await getCategorie('/api/v1/categorie/')
+   } catch (err) {
+     console.error('Errore nel recupero delle categorie', err.message)
+   }
+@@ -41,7 +40,7 @@ onMounted(async () => {
+   // Fetch book data if editing
+   if (props.isEdit && props.idLibro) {
+     try {
+-      let result = await libriComp.getLibro(`/api/v1/libri/${props.idLibro}`)
++      let result = await getLibro(`/api/v1/libri/${props.idLibro}`)
+ 
+       // Populate form with existing data
+       libro.titolo = result.titolo || ''
+@@ -79,12 +78,12 @@ const salva = async () => {
+ 
+     if (props.isEdit && props.idLibro) {
+       // Update existing book
+-      result = await libriComp.updateLibro(`/api/v1/libri/${props.idLibro}/`, libro)
++      result = await updateLibro(`/api/v1/libri/${props.idLibro}/`, libro)
+       emit('updated', result)
+       // success.value = `Libro "${libro.titolo}" aggiornato correttamente`
+     } else {
+       // Create new book
+-      result = await libriComp.newLibro(`/api/v1/libri/`, libro)
++      result = await newLibro(`/api/v1/libri/`, libro)
+       emit('saved', result)
+       // success.value = `Libro "${libro.titolo}" salvato correttamente. Reindirizzamento...`
+ 
 diff --git a/biblioblab-vue-frontend/src/components/RicercaLibri.vue b/biblioblab-vue-frontend/src/components/RicercaLibri.vue
-index eb96722..2c3c7e9 100644
+index 8f7c108..902f022 100644
 --- a/biblioblab-vue-frontend/src/components/RicercaLibri.vue
 +++ b/biblioblab-vue-frontend/src/components/RicercaLibri.vue
-@@ -9,7 +9,7 @@ const libri = ref([])
- const generi = ref([])
- const filtro = ref('')
+@@ -15,11 +15,9 @@ const filtro = ref('')
  const genereSelezionato = ref('Tutti')
--const libriFiltratiPerGenere = ref([])
-+// const libriFiltratiPerGenere = ref([])
  const soloDisponibili = ref(false)
  const loading = ref(false)
- const libroComposable = useLibri()
-@@ -18,13 +18,11 @@ onMounted(async () => {
-   try {
-     libri.value = await libroComposable.getLibri('/api/v1/libri/')
-     generi.value = await libroComposable.getCategorie('/api/v1/categorie/')
--    console.log({generi: generi.value})
-   } catch (err) {
-     console.error('Error fetching onMounted', err)
-   }
- })
+-const libroComposable = useLibri()
  
--
- let timeout = null
- 
- watch(filtro, (newFiltro, oldFiltro) => {
-@@ -60,45 +58,25 @@ onUnmounted(() => {
- 
- const libriFiltrati = computed(() => {
-   let result = libri.value
--  if (soloDisponibili.value) {
-+  if (soloDisponibili.value === true) {
-     result = libri.value.filter((l) => l.disponibile)
-   }
--  // if (genereSelezionato.value !== 'Tutti') {
--  //   result = result.filter((l) => l.categorie?.includes(genereSelezionato.value))
--  // }
-+  console.log({ disponibili: soloDisponibili.value })
-+  if (genereSelezionato.value !== 'Tutti') {
-+    result = result.filter((l) => l.categorie.some((cat) => cat.nome === genereSelezionato.value))
-+  }
- 
-   if (!filtro.value || filtro.value.length < 3) return result
--  console.log({result : result})
--  const filterTest = result.filter((l) => {
--  // return result.filter((l) => {
-+  return result.filter((l) => {
-+    // return result.filter((l) => {
-     const titolo = (l.titolo || '').toLowerCase()
-     const autore = (l.autore_oggetto.cognome || '').toLowerCase()
-     const search = filtro.value.toLowerCase()
-     return titolo.includes(search) || autore.includes(search)
-   })
--  console.log({filterTest: filterTest})
--  return filterTest
- })
--
--const getLibriByGenere = async () => {
--  try {
--    libri.value = await libroComposable.getLibri('/api/v1/libri/')
--    console.log({libri: libri.value})
--    if (genereSelezionato.value !== 'Tutti') {
--      libriFiltratiPerGenere.value = libri.value.filter((l) =>
--        l.categorie.some(cat => cat.nome === genereSelezionato.value)
--        // l.categorie.nome.includes(genereSelezionato.value),
--      )
--      console.log({libriPerGen: libriFiltratiPerGenere.value, selezionato: genereSelezionato.value})
--
--    } else {
--      libriFiltratiPerGenere.value = libri.value
--    }
--  } catch (err) {
--    console.error('Error catch in search by genre', err)
--  }
--}
- </script>
+-// Debug: Check if libroComposable has eliminaLibro method
+-console.log('libroComposable:', libroComposable)
+-console.log('eliminaLibro method:', libroComposable.eliminaLibro)
++const { getLibri, getCategorie} = useLibri()
 +
+ 
+ // Use the preferiti composable
+ const { arrayPreferiti, togglePreferito} = usePreferiti()
+@@ -34,13 +32,13 @@ const {
+   onConferma,
+   onAnnulla,
+   isDeleting,
+-} = useEliminaLibro(libri, libroComposable)
++} = useEliminaLibro(libri)
+ 
+ const fetchData = async () => {
+   try {
+     const [libriData, generiData] = await Promise.all([
+-      libroComposable.getLibri('/api/v1/libri/'),
+-      libroComposable.getCategorie('/api/v1/categorie/'),
++      getLibri('/api/v1/libri/'),
++      getCategorie('/api/v1/categorie/'),
+     ])
+     libri.value = libriData
+     generi.value = generiData
+@@ -67,7 +65,7 @@ watch(filtro, (newFiltro, oldFiltro) => {
+ 
+   timeout = setTimeout(async () => {
+     try {
+-      libri.value = await libroComposable.getLibri('/api/v1/libri/')
++      libri.value = await getLibri('/api/v1/libri/')
+     } catch (err) {
+       console.error('Error while fetching libri', err)
+     } finally {
+@@ -105,13 +103,6 @@ const libriFiltrati = computed(() => {
+ </script>
+ 
  <template>
-   <h2>Ricerca libri</h2>
-   <!-- <h2>Catalogo</h2>
-@@ -115,6 +93,7 @@ const getLibriByGenere = async () => {
-       <label for="disponibile">Solo disponibili</label>
+-
+-  <!-- <h2>Catalogo</h2>
+-  <ul>
+-    <li v-for="libro in libri" :key="libro.id">
+-      {{ libro.titolo }} di {{ libro.autore }} - genere: {{ libro.genere }} ({{ libro.anno }})
+-    </li>
+-  </ul> -->
+   <LoadingSpinner v-if="loading || deleteLoading"/>
+   <ModalVue
+     v-if="showModal"
+diff --git a/biblioblab-vue-frontend/src/composable/useEliminaLibro.js b/biblioblab-vue-frontend/src/composable/useEliminaLibro.js
+index afcd80d..aa1d4d3 100644
+--- a/biblioblab-vue-frontend/src/composable/useEliminaLibro.js
++++ b/biblioblab-vue-frontend/src/composable/useEliminaLibro.js
+@@ -1,13 +1,15 @@
+ import { ref } from 'vue'
++import { useLibri } from './useLibri'
  
-       <input id="disponibile" type="checkbox" v-model="soloDisponibili" />
-+      <CustomSelect v-model="genereSelezionato" :opzioni="generi" @change="libriFiltrati" />
-     </div>
-   </form>
  
-@@ -122,17 +101,6 @@ const getLibriByGenere = async () => {
-   <div class="parent">
-     <LibroCard v-for="libro in libriFiltrati" :key="libro.id" v-bind="libro" class="libro-card" />
-   </div>
--  <h3>Libri filtrati per genere</h3>
--  <h4>{{ libriFiltratiPerGenere.length }} libri trovati su {{ libri.length }}</h4>
--  <CustomSelect v-model="genereSelezionato" :opzioni="generi" @change="getLibriByGenere" />
--  <div class="parent">
--    <LibroCard
--      v-for="libro in libriFiltratiPerGenere"
--      :key="libro.id"
--      v-bind="libro"
--      class="libro-card"
--    />
--  </div>
- </template>
+-export function useEliminaLibro(libri, libriComp, fetchLibri) {
++export function useEliminaLibro(libri, fetchLibri) {
+   const showModal = ref(false)
+   const button1Text = ref('Conferma')
+   const button2Text = ref('Annulla')
+   const libroDaRimuovere = ref(null)
+   const loading = ref(false)
+   const deletingIds = ref(new Set())
++  const { eliminaLibro } = useLibri()
  
- <style scoped>
+   const removeConfirmation = (id) => {
+     libroDaRimuovere.value = id
+@@ -20,7 +22,7 @@ export function useEliminaLibro(libri, libriComp, fetchLibri) {
+     if (!id) return
+ 
+     try{
+-      const result = await libriComp.eliminaLibro(`/api/v1/libri/${id}/`)
++      const result = await eliminaLibro(`/api/v1/libri/${id}/`)
+       showModal.value = false
+       console.log('Libro eliminato con successo', result)
+ 
+diff --git a/biblioblab-vue-frontend/src/views/CatalogoView.vue b/biblioblab-vue-frontend/src/views/CatalogoView.vue
+index 6a74c15..b4db154 100644
+--- a/biblioblab-vue-frontend/src/views/CatalogoView.vue
++++ b/biblioblab-vue-frontend/src/views/CatalogoView.vue
+@@ -7,11 +7,11 @@ import { useEliminaLibro } from '@/composable/useEliminaLibro'
+ import ModalVue from '@/components/ModalVue.vue'
+ import LoadingSpinner from '@/components/LoadingSpinner.vue'
+ 
+-const libriComp = useLibri()
++const { getLibri} = useLibri()
+ const libri = ref([])
+ 
+ // Use the preferiti composable
+-const { arrayPreferiti, togglePreferito, isPreferito } = usePreferiti()
++const { arrayPreferiti, togglePreferito } = usePreferiti()
+ 
+ //Use the delete composable
+ const {
+@@ -23,10 +23,8 @@ const {
+   onConferma,
+   onAnnulla,
+   isDeleting,
+-} = useEliminaLibro(libri, libriComp)
++} = useEliminaLibro(libri)
+ 
+-// DELETION ANIMATION - STEP 1: Create a Set to track which book IDs are currently being deleted
+-// This Set stores the IDs of books that should show the deletion animation (deletingIds)
+ 
+ const libriDisponibili = computed(() => {
+   return libri.value.filter((l) => l.disponibile).length
+@@ -34,7 +32,7 @@ const libriDisponibili = computed(() => {
+ 
+ const totaleLibri = computed(() => libri.value.length)
+ 
+-onMounted(async () => (libri.value = await libriComp.getLibri('/api/v1/libri/')))
++onMounted(async () => (libri.value = await getLibri('/api/v1/libri/')))
+ </script>
+ 
+ <template>
+@@ -53,16 +51,7 @@ onMounted(async () => (libri.value = await libriComp.getLibri('/api/v1/libri/'))
+     <h1>Catalogo</h1>
+     <h2>{{ libriDisponibili }} libri disponibili su {{ totaleLibri }}</h2>
+ 
+-    <!-- DELETION ANIMATION - STEP 7: TransitionGroup wrapper
+-         - 'name="card"' - Prefix for CSS classes (card-enter-active, card-leave-active, etc.)
+-         - 'tag="div"' - Renders as a div element
+-         - 'class="parent"' - Applies the grid layout styling
+-         - This component automatically handles enter/leave animations for its children -->
+     <TransitionGroup name="card" tag="div" class="parent">
+-      <!-- DELETION ANIMATION - STEP 8: Individual card rendering
+-           - Each LibroCard is wrapped by TransitionGroup for animation
+-           - ':class' binding dynamically adds 'card-deleting' class when isDeleting() is true
+-           - The 'card-deleting' class triggers the CSS animation -->
+       <div class="parent" v-for="libro in libri" :key="libro.id">
+         <LibroCard
+           v-bind="libro"
+@@ -82,49 +71,23 @@ h2 {
+   margin: 20px;
+ }
+ 
+-/* DELETION ANIMATION - STEP 9: Transition classes for Vue's TransitionGroup */
++
+ .card-enter-active, /*Not used, it's for added cards */
+ .card-leave-active {
+   transition: all 0.4s ease;
+ }
+ 
+-/* DELETION ANIMATION - STEP 10: Starting state when element enters
+-   - Element starts invisible (opacity: 0)
+-   - Starts slightly below its final position (translateY: 30px)
+-   - Starts slightly smaller (scale: 0.9)
+-   - Transitions to its final state (opacity: 1, translateY: 0, scale: 1)
+    Not needed in this case*/
+ .card-enter-from {
+   opacity: 0;
+   transform: translateY(30px) scale(0.9);
+ }
+ 
+-/* DELETION ANIMATION - STEP 11: Ending state when element leaves
+-   - Element fades out (opacity: 0)
+-   - Slides left while shrinking (translateX: -50px, scale: 0.8)
+-   - This creates a "slide out and shrink" effect */
+-/* .card-leave-to {
+-  opacity: 0;
+-  transform: translateX(-50px) scale(0.8);
+-} */
+-
+-/* DELETION ANIMATION - STEP 12: Critical positioning for leave animation
+-   - 'position: absolute' - Removes the element from the normal flow
+-   - This prevents other cards from shifting during the animation
+-   - 'width: 100%' - Maintains the width during the animation
+-   - Without this, the grid would reflow immediately, ruining the animation */
+ .card-leave-active {
+   position: absolute;
+   width: 100%;
+ }
+ 
+-/* DELETION ANIMATION - STEP 13: Custom deletion animation triggered manually
+-   - 'opacity: 0' - Fades the card out completely
+-   - 'transform: translateX(-100px) scale(0.5)' - Slides left and shrinks more dramatically
+-   - '!important' - Overrides any conflicting styles
+-   - 'transition: all 0.4s ease' - Applies the same duration and easing
+-   - This is applied via the JavaScript setTimeout, giving a different animation
+-   - than the standard leave animation */
+ .card-deleting {
+   opacity: 0 !important;
+   transform: scale(0.5) !important;
+@@ -145,26 +108,16 @@ h1 {
+   text-align: center;
+ }
+ 
+-/* DELETION ANIMATION - STEP 14: Relative positioning for absolute children
+-     - Required because .card-leave-active uses position: absolute
+-     - This creates a positioning context for the absolutely positioned
+-       elements during the leave animation */
+ .parent {
+   position: relative; /* Needed for deletion animation (absolute children) */
+   display: grid;
+-  /* grid-template-columns: repeat(6, 1fr); */
+-  /* Automatically fits as many cards as possible, minimum width 280px */
+   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+-  /* grid-template-rows: repeat(4, 1fr); */
+   gap: 32px;
+ }
+ 
+ .libro-card {
+   grid-column: auto;
+   grid-row: auto;
+-  /* DELETION ANIMATION - STEP 15: Smooth transitions for hover effects
+-     - Not directly related to deletion, but ensures consistent animations
+-     - Applies to any property changes on the card */
+   transition: all 0.3s ease;
+   background-color: rgb(152, 152, 177);
+ }
+diff --git a/biblioblab-vue-frontend/src/views/DettaglioLibroView.vue b/biblioblab-vue-frontend/src/views/DettaglioLibroView.vue
+index 1b587dc..ade13e6 100644
+--- a/biblioblab-vue-frontend/src/views/DettaglioLibroView.vue
++++ b/biblioblab-vue-frontend/src/views/DettaglioLibroView.vue
+@@ -8,16 +8,20 @@ import LoadingSpinner from '@/components/LoadingSpinner.vue'
+ const route = useRoute()
+ const authStore = useAuthStore()
+ const libro = ref({})
+-const compLibro = useLibri()
++const { getLibro} = useLibri()
+ const id = ref(null)
++const loading = ref(false)
+ 
+ onMounted(async () => {
+   const id = route.params.id //get id from route parameters
+-  libro.value = await compLibro.getLibro(`/api/v1/libri/${id}`)
++  loading.value = true
++  libro.value = await getLibro(`/api/v1/libri/${id}`)
++  loading.value = false
+ })
+ </script>
+ 
+ <template>
++  <LoadingSpinner v-if="loading" />
+   <div class="card-container">
+     <div class="libro-card">
+       <div class="libro-cover">

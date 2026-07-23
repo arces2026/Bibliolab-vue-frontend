@@ -16,14 +16,11 @@ const onSuccess = (libro) => {
   button2Text.value = 'Esci'
   showModal.value = true
   successMessage.value = `Il libro "${libro.titolo}" è stato salvato con successo`
-  // setTimeout(() => {
-  //   router.push('/libri')
-  // }, 1500)
 }
 
 const onExit = () => {
   showModal.value = false
-  router.push('/libri')
+  router.push('/ricerca')
 }
 const onNext = () => showModal.value = false
 </script>

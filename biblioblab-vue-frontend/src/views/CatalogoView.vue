@@ -6,6 +6,8 @@ import { usePreferiti } from '@/composable/usePreferiti'
 import { useEliminaLibro } from '@/composable/useEliminaLibro'
 import ModalVue from '@/components/ModalVue.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
+import RicercaLibri from '@/components/RicercaLibri.vue'
+
 
 const { getLibri} = useLibri()
 const libri = ref([])
@@ -47,19 +49,21 @@ onMounted(async () => (libri.value = await getLibri('/api/v1/libri/')))
     :button2="button2Text"
     class="modal"
   />
+
   <div class="container">
+    <RicercaLibri />
     <h1>Catalogo</h1>
     <h2>{{ libriDisponibili }} libri disponibili su {{ totaleLibri }}</h2>
 
     <TransitionGroup name="card" tag="div" class="parent">
       <div class="parent" v-for="libro in libri" :key="libro.id">
-        <LibroCard
+        <!-- <LibroCard
           v-bind="libro"
           @addPreferiti="togglePreferito"
           @onDelete="removeConfirmation"
           :preferito="arrayPreferiti.has(libro.id)"
           :class="['libro-card', { 'card-deleting': isDeleting(libro.id) }]"
-        />
+        /> -->
       </div>
     </TransitionGroup>
   </div>
@@ -71,13 +75,12 @@ h2 {
   margin: 20px;
 }
 
-
 .card-enter-active, /*Not used, it's for added cards */
 .card-leave-active {
   transition: all 0.4s ease;
 }
 
-   Not needed in this case*/
+ /*  Not needed in this case*/
 .card-enter-from {
   opacity: 0;
   transform: translateY(30px) scale(0.9);

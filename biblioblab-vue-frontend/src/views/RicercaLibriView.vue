@@ -1,9 +1,15 @@
 <script setup>
-import RicercaLibri from '@/components/RicercaLibri.vue';
-
-
+import RicercaLibri from '@/components/RicercaLibri.vue'
 </script>
 
 <template>
-  <RicercaLibri />
+  <div class="container">
+    <RicercaLibri />
+  </div>
 </template>
+
+<style scoped>
+.container {
+  padding: 20px;
+}
+</style>
