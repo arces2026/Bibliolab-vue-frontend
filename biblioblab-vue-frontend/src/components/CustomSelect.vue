@@ -2,6 +2,7 @@
 //per supportare il v-model custom il componente deve:
 //1. Accettare la prop 'modelValue'
 //2. Emettere l'evento 'update:modelValue'
+// eslint-disable-next-line no-unused-vars
 const props = defineProps({
   modelValue: {
     type: String,
@@ -35,7 +36,8 @@ const onChange = (e) => {
   <div class="container">
     <label :for="label">{{ label }}</label>
     <select :id="label" @change="onChange" :value="modelValue" :class="{ errore: errore }">
-      <option v-for="opt in opzioni" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+      <option value="tutti">Tutti</option>
+      <option v-for="opt in opzioni" :key="opt.id" :value="opt.nome">{{ opt.nome }}</option>
     </select>
     <span v-if="errore" class="errore-msg">{{ errore }}</span>
   </div>

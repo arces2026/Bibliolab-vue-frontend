@@ -1,62 +1,61 @@
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import LoadingSpinner from './LoadingSpinner.vue'
 import LibroCard from './LibroCard.vue'
-import CampoSelect from './CampoSelect.vue'
+import CustomSelect from './CustomSelect.vue'
+import { useLibri } from '@/composable/useLibri.js'
 
 const libri = ref([])
-// const generi = ref(['Romanzo', 'Saggio', 'Racconti', 'Classico', 'Contemporaneo'])
+const generi = ref([])
 const filtro = ref('')
 const genereSelezionato = ref('Tutti')
 const libriFiltratiPerGenere = ref([])
 const soloDisponibili = ref(false)
 const loading = ref(false)
+const libroComposable = useLibri()
 
-onMounted(async() => {
+onMounted(async () => {
   try {
-    const res = await fetch(`/api/libri/`) // vite proxy (vite.config.js)
-    // const res = await fetch(`http://localhost:8000/api/libri/`)
-    if (!res.ok){
-      throw new Error('Error during the fetch for genres', Error.message)
-    }
-    const data = await res.json()
-    libri.value = data.results
-  }catch(err){
+    libri.value = await libroComposable.getLibri('/api/v1/libri/')
+    generi.value = await libroComposable.getCategorie('/api/v1/categorie/')
+    console.log({generi: generi.value})
+  } catch (err) {
     console.error('Error fetching onMounted', err)
   }
 })
 
 
-const generi = computed(() => {
-  const unique = [...new Set(libri.value.flatMap(l => l.categorie))];
-  return  [{ value: 'Tutti', label: 'Tutti' }, ...unique.map(g => ({ value: g, label: g }))];
-});
-
 let timeout = null
+
 watch(filtro, (newFiltro, oldFiltro) => {
+  // Clear any existing timeout
   clearTimeout(timeout)
-  if (filtro.value.length < 3) return
+  if (newFiltro === oldFiltro) {
+    loading.value = false
+    return
+  }
+  if (newFiltro.length < 3) {
+    loading.value = false
+    return
+  }
   loading.value = true
+
   timeout = setTimeout(async () => {
     try {
-      const res = await fetch(`/api/libri/`, { //vite proxy (vite.config.js)
-      // const res = await fetch(`http://localhost:8000/api/libri/`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-      if (!res.ok) {
-        throw new Error('Error in setTimeout fetch', Error.message)
-      }
-      const data = await res.json()
-      libri.value = data.results
+      libri.value = await libroComposable.getLibri('/api/v1/libri/')
     } catch (err) {
       console.error('Error while fetching libri', err)
     } finally {
       loading.value = false
     }
   }, 300)
+})
+
+//Clean up on component unmount
+onUnmounted(() => {
+  if (timeout) {
+    clearTimeout(timeout)
+  }
 })
 
 const libriFiltrati = computed(() => {
@@ -68,35 +67,34 @@ const libriFiltrati = computed(() => {
   //   result = result.filter((l) => l.categorie?.includes(genereSelezionato.value))
   // }
 
-  if (!filtro.value) return result
-
-
-
+  if (!filtro.value || filtro.value.length < 3) return result
+  console.log({result : result})
+  const filterTest = result.filter((l) => {
   // return result.filter((l) => {
-  return result.filter((l) => {
     const titolo = (l.titolo || '').toLowerCase()
-    const autore = (l.autore.nome || '').toLowerCase()
+    const autore = (l.autore_oggetto.cognome || '').toLowerCase()
     const search = filtro.value.toLowerCase()
     return titolo.includes(search) || autore.includes(search)
   })
+  console.log({filterTest: filterTest})
+  return filterTest
 })
 
-const getLibriByGenere = async() => {
-  try{
-    const res = await fetch(`/api/libri/`) // proxy vite (vite.config.js)
-    // const res = await fetch(`http://localhost:8000/api/libri/`)
-    if (!res.ok) {
-      throw new Error('Error fetching book by genre', Error.message)
-       }
-      const data = await res.json()
-      libri.value = data.results
-      if (genereSelezionato.value !== 'Tutti'){
+const getLibriByGenere = async () => {
+  try {
+    libri.value = await libroComposable.getLibri('/api/v1/libri/')
+    console.log({libri: libri.value})
+    if (genereSelezionato.value !== 'Tutti') {
+      libriFiltratiPerGenere.value = libri.value.filter((l) =>
+        l.categorie.some(cat => cat.nome === genereSelezionato.value)
+        // l.categorie.nome.includes(genereSelezionato.value),
+      )
+      console.log({libriPerGen: libriFiltratiPerGenere.value, selezionato: genereSelezionato.value})
 
-      libriFiltratiPerGenere.value = libri.value.filter((l) => l.categorie?.includes(genereSelezionato.value))
-      } else {
-        libriFiltratiPerGenere.value = libri.value
-      }
-  } catch(err){
+    } else {
+      libriFiltratiPerGenere.value = libri.value
+    }
+  } catch (err) {
     console.error('Error catch in search by genre', err)
   }
 }
@@ -126,9 +124,14 @@ const getLibriByGenere = async() => {
   </div>
   <h3>Libri filtrati per genere</h3>
   <h4>{{ libriFiltratiPerGenere.length }} libri trovati su {{ libri.length }}</h4>
-  <CampoSelect v-model="genereSelezionato" :opzioni="generi" @change="getLibriByGenere" />
+  <CustomSelect v-model="genereSelezionato" :opzioni="generi" @change="getLibriByGenere" />
   <div class="parent">
-    <LibroCard v-for="libro in libriFiltratiPerGenere" :key="libro.id" v-bind="libro" class="libro-card" />
+    <LibroCard
+      v-for="libro in libriFiltratiPerGenere"
+      :key="libro.id"
+      v-bind="libro"
+      class="libro-card"
+    />
   </div>
 </template>
 
@@ -144,7 +147,9 @@ const getLibriByGenere = async() => {
   margin: auto;
 }
 
-h2,h3, h4 {
+h2,
+h3,
+h4 {
   text-align: center;
   margin-bottom: 15px;
 }

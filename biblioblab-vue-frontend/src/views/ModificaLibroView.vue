@@ -15,7 +15,6 @@ const button2Text = ref('')
 
 onMounted(async () => {
   id.value = route.params.id
-  console.log({ libro: libro.value })
 })
 
 const handleUpdated = () => {
