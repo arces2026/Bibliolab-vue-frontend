@@ -9,7 +9,7 @@ const libri = ref([])
 const generi = ref([])
 const filtro = ref('')
 const genereSelezionato = ref('Tutti')
-const libriFiltratiPerGenere = ref([])
+// const libriFiltratiPerGenere = ref([])
 const soloDisponibili = ref(false)
 const loading = ref(false)
 const libroComposable = useLibri()
@@ -18,12 +18,10 @@ onMounted(async () => {
   try {
     libri.value = await libroComposable.getLibri('/api/v1/libri/')
     generi.value = await libroComposable.getCategorie('/api/v1/categorie/')
-    console.log({generi: generi.value})
   } catch (err) {
     console.error('Error fetching onMounted', err)
   }
 })
-
 
 let timeout = null
 
@@ -60,45 +58,25 @@ onUnmounted(() => {
 
 const libriFiltrati = computed(() => {
   let result = libri.value
-  if (soloDisponibili.value) {
+  if (soloDisponibili.value === true) {
     result = libri.value.filter((l) => l.disponibile)
   }
-  // if (genereSelezionato.value !== 'Tutti') {
-  //   result = result.filter((l) => l.categorie?.includes(genereSelezionato.value))
-  // }
+  console.log({ disponibili: soloDisponibili.value })
+  if (genereSelezionato.value !== 'Tutti') {
+    result = result.filter((l) => l.categorie.some((cat) => cat.nome === genereSelezionato.value))
+  }
 
   if (!filtro.value || filtro.value.length < 3) return result
-  console.log({result : result})
-  const filterTest = result.filter((l) => {
-  // return result.filter((l) => {
+  return result.filter((l) => {
+    // return result.filter((l) => {
     const titolo = (l.titolo || '').toLowerCase()
     const autore = (l.autore_oggetto.cognome || '').toLowerCase()
     const search = filtro.value.toLowerCase()
     return titolo.includes(search) || autore.includes(search)
   })
-  console.log({filterTest: filterTest})
-  return filterTest
 })
-
-const getLibriByGenere = async () => {
-  try {
-    libri.value = await libroComposable.getLibri('/api/v1/libri/')
-    console.log({libri: libri.value})
-    if (genereSelezionato.value !== 'Tutti') {
-      libriFiltratiPerGenere.value = libri.value.filter((l) =>
-        l.categorie.some(cat => cat.nome === genereSelezionato.value)
-        // l.categorie.nome.includes(genereSelezionato.value),
-      )
-      console.log({libriPerGen: libriFiltratiPerGenere.value, selezionato: genereSelezionato.value})
-
-    } else {
-      libriFiltratiPerGenere.value = libri.value
-    }
-  } catch (err) {
-    console.error('Error catch in search by genre', err)
-  }
-}
 </script>
+
 <template>
   <h2>Ricerca libri</h2>
   <!-- <h2>Catalogo</h2>
@@ -115,23 +93,13 @@ const getLibriByGenere = async () => {
       <label for="disponibile">Solo disponibili</label>
 
       <input id="disponibile" type="checkbox" v-model="soloDisponibili" />
+      <CustomSelect v-model="genereSelezionato" :opzioni="generi" @change="libriFiltrati" />
     </div>
   </form>
 
   <h3>{{ libriFiltrati.length }} libri trovati su {{ libri.length }}</h3>
   <div class="parent">
     <LibroCard v-for="libro in libriFiltrati" :key="libro.id" v-bind="libro" class="libro-card" />
-  </div>
-  <h3>Libri filtrati per genere</h3>
-  <h4>{{ libriFiltratiPerGenere.length }} libri trovati su {{ libri.length }}</h4>
-  <CustomSelect v-model="genereSelezionato" :opzioni="generi" @change="getLibriByGenere" />
-  <div class="parent">
-    <LibroCard
-      v-for="libro in libriFiltratiPerGenere"
-      :key="libro.id"
-      v-bind="libro"
-      class="libro-card"
-    />
   </div>
 </template>
 
