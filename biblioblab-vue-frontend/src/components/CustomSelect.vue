@@ -8,7 +8,7 @@ const props = defineProps({
     type: String,
     default: '',
   },
-  label: {
+  text: {
     type: String,
     default: '',
   },
@@ -34,9 +34,8 @@ const onChange = (e) => {
 
 <template>
   <div class="container">
-    <label :for="label">{{ label }}</label>
-    <select :id="label" @change="onChange" :value="modelValue" :class="{ errore: errore }">
-      <option value="tutti">Tutti</option>
+    <select @change="onChange" :value="modelValue" :class="{ errore: errore }">
+      <option :value="text" >{{ text }}</option>
       <option v-for="opt in opzioni" :key="opt.id" :value="opt.nome">{{ opt.nome }}</option>
     </select>
     <span v-if="errore" class="errore-msg">{{ errore }}</span>

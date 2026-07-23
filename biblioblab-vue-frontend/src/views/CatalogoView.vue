@@ -2,33 +2,31 @@
 import { ref, onMounted, computed } from 'vue'
 import LibroCard from '@/components/LibroCard.vue'
 import { useLibri } from '@/composable/useLibri'
+import { usePreferiti } from '@/composable/usePreferiti'
+import { useEliminaLibro } from '@/composable/useEliminaLibro'
 import ModalVue from '@/components/ModalVue.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 
 const libriComp = useLibri()
 const libri = ref([])
-const arrayPreferiti = ref(new Set())
-const showModal = ref(false)
-const button1Text = ref('Conferma')
-const button2Text = ref('Annulla')
-const libroDaRimuovere = ref(null)
-const loading = ref(false)
+
+// Use the preferiti composable
+const { arrayPreferiti, togglePreferito, isPreferito } = usePreferiti()
+
+//Use the delete composable
+const {
+  showModal,
+  button1Text,
+  button2Text,
+  loading,
+  removeConfirmation,
+  onConferma,
+  onAnnulla,
+  isDeleting,
+} = useEliminaLibro(libri, libriComp)
 
 // DELETION ANIMATION - STEP 1: Create a Set to track which book IDs are currently being deleted
-// This Set stores the IDs of books that should show the deletion animation
-const deletingIds = ref(new Set())
-
-const preferiti = (id) => {
-  localStorage.getItem('preferiti')
-  if (arrayPreferiti.value.has(id)) {
-    arrayPreferiti.value.delete(id)
-  } else {
-    arrayPreferiti.value.add(id)
-  }
-  // Ricrea il Set per reattività Vue
-  arrayPreferiti.value = new Set(arrayPreferiti.value)
-  localStorage.setItem('preferiti', JSON.stringify(Array.from(arrayPreferiti.value)))
-}
+// This Set stores the IDs of books that should show the deletion animation (deletingIds)
 
 const libriDisponibili = computed(() => {
   return libri.value.filter((l) => l.disponibile).length
@@ -36,69 +34,7 @@ const libriDisponibili = computed(() => {
 
 const totaleLibri = computed(() => libri.value.length)
 
-onMounted(async () => {
-  //First load from localStorage
-  const stored = localStorage.getItem('preferiti')
-  if (stored) {
-    try {
-      const parsed = JSON.parse(stored)
-      arrayPreferiti.value = new Set(parsed)
-    } catch (err) {
-      console.error('Error getting preferiti from localStorage', err.message)
-    }
-  }
-  // Then fetch the book
-  libri.value = await libriComp.getLibri(`/api/v1/libri/`) //using proxy server (vite.config.js)
-})
-
-const removeConfirmation = (id) => {
-  libroDaRimuovere.value = id //store the ID when delete is requested
-  showModal.value = true
-}
-
-const onConferma = async () => {
-  loading.value = true
-  const id = libroDaRimuovere.value
-  if (!id) return
-  try {
-    const result = await libriComp.eliminaLibro(`/api/v1/libri/${id}/`)
-    // emit('delete', props.id)
-
-    showModal.value = false
-    console.log('Libro eliminato con successo', result)
-    loading.value = false
-
-    // DELETION ANIMATION - STEP 2: Add the book ID to the deletingIds Set
-    // This triggers the reactive system to apply the 'card-deleting' CSS class
-    // to this specific card, starting the animation
-    deletingIds.value.add(id)
-
-     // DELETION ANIMATION - STEP 3: Wait for the animation to complete
-    // The setTimeout duration (400ms) MUST match the CSS animation duration
-    // This ensures the animation plays fully before removing the card from the DOM
-    setTimeout(() => {
-      // DELETION ANIMATION - STEP 4: Remove the book from the reactive array
-      // This causes Vue to remove the element from the DOM
-      libri.value = libri.value.filter((l) => l.id !== id)
-
-      // DELETION ANIMATION - STEP 5: Clean up by removing the ID from the Set
-      // This prevents memory leaks and ensures the card won't have the deleting class
-      // if it somehow reappears (e.g., during development with hot reload)
-      deletingIds.value.delete(id)
-    }, 400) // Match this duration with the CSS transition duration below
-
-  } catch (err) {
-    console.error("Errore durante l'eliminazione", err.message)
-    alert("Errore durante l'eliminazione:" + err.message)
-  }
-}
-
-const onAnnulla = () => (showModal.value = false)
-
-// DELETION ANIMATION - STEP 6: Helper function to check if a book is being deleted
-// This is used in the template to conditionally apply the 'card-deleting' class
-// Returns true if the ID is in the deletingIds Set
-const isDeleting = (id) => deletingIds.value.has(id)
+onMounted(async () => (libri.value = await libriComp.getLibri('/api/v1/libri/')))
 </script>
 
 <template>
@@ -122,23 +58,15 @@ const isDeleting = (id) => deletingIds.value.has(id)
          - 'tag="div"' - Renders as a div element
          - 'class="parent"' - Applies the grid layout styling
          - This component automatically handles enter/leave animations for its children -->
-    <TransitionGroup
-      name="card"
-      tag="div"
-      class="parent"
-    >
-     <!-- DELETION ANIMATION - STEP 8: Individual card rendering
+    <TransitionGroup name="card" tag="div" class="parent">
+      <!-- DELETION ANIMATION - STEP 8: Individual card rendering
            - Each LibroCard is wrapped by TransitionGroup for animation
            - ':class' binding dynamically adds 'card-deleting' class when isDeleting() is true
            - The 'card-deleting' class triggers the CSS animation -->
-      <div class="parent"
-        v-for="libro in libri"
-          :key="libro.id"
-      >
+      <div class="parent" v-for="libro in libri" :key="libro.id">
         <LibroCard
-
           v-bind="libro"
-          @addPreferiti="preferiti"
+          @addPreferiti="togglePreferito"
           @onDelete="removeConfirmation"
           :preferito="arrayPreferiti.has(libro.id)"
           :class="['libro-card', { 'card-deleting': isDeleting(libro.id) }]"
@@ -199,7 +127,7 @@ h2 {
    - than the standard leave animation */
 .card-deleting {
   opacity: 0 !important;
-  transform:  scale(0.5) !important;
+  transform: scale(0.5) !important;
   /* transform: translateX(-100px) scale(0.5) !important; */
   transition: all 0.4s ease !important;
 }

@@ -4,23 +4,53 @@ import LoadingSpinner from './LoadingSpinner.vue'
 import LibroCard from './LibroCard.vue'
 import CustomSelect from './CustomSelect.vue'
 import { useLibri } from '@/composable/useLibri.js'
+import { usePreferiti } from '@/composable/usePreferiti.js'
+import { useEliminaLibro } from '@/composable/useEliminaLibro.js'
+import ModalVue from './ModalVue.vue'
 
 const libri = ref([])
+const text = ref('Tutti')
 const generi = ref([])
 const filtro = ref('')
 const genereSelezionato = ref('Tutti')
-// const libriFiltratiPerGenere = ref([])
 const soloDisponibili = ref(false)
 const loading = ref(false)
 const libroComposable = useLibri()
 
-onMounted(async () => {
+// Debug: Check if libroComposable has eliminaLibro method
+console.log('libroComposable:', libroComposable)
+console.log('eliminaLibro method:', libroComposable.eliminaLibro)
+
+// Use the preferiti composable
+const { arrayPreferiti, togglePreferito} = usePreferiti()
+
+// Use the delete composable
+const {
+  showModal,
+  button1Text,
+  button2Text,
+  loading: deleteLoading,
+  removeConfirmation,
+  onConferma,
+  onAnnulla,
+  isDeleting,
+} = useEliminaLibro(libri, libroComposable)
+
+const fetchData = async () => {
   try {
-    libri.value = await libroComposable.getLibri('/api/v1/libri/')
-    generi.value = await libroComposable.getCategorie('/api/v1/categorie/')
+    const [libriData, generiData] = await Promise.all([
+      libroComposable.getLibri('/api/v1/libri/'),
+      libroComposable.getCategorie('/api/v1/categorie/'),
+    ])
+    libri.value = libriData
+    generi.value = generiData
   } catch (err) {
-    console.error('Error fetching onMounted', err)
+    console.error('Errore recuperando i dati', err.message)
   }
+}
+
+onMounted(async () => {
+  await fetchData()
 })
 
 let timeout = null
@@ -28,14 +58,11 @@ let timeout = null
 watch(filtro, (newFiltro, oldFiltro) => {
   // Clear any existing timeout
   clearTimeout(timeout)
-  if (newFiltro === oldFiltro) {
+  if (newFiltro === oldFiltro || newFiltro < 3) {
     loading.value = false
     return
   }
-  if (newFiltro.length < 3) {
-    loading.value = false
-    return
-  }
+
   loading.value = true
 
   timeout = setTimeout(async () => {
@@ -78,14 +105,25 @@ const libriFiltrati = computed(() => {
 </script>
 
 <template>
-  <h2>Ricerca libri</h2>
+
   <!-- <h2>Catalogo</h2>
   <ul>
     <li v-for="libro in libri" :key="libro.id">
       {{ libro.titolo }} di {{ libro.autore }} - genere: {{ libro.genere }} ({{ libro.anno }})
     </li>
   </ul> -->
-  <LoadingSpinner v-if="loading" />
+  <LoadingSpinner v-if="loading || deleteLoading"/>
+  <ModalVue
+    v-if="showModal"
+    @next="onConferma"
+    @exit="onAnnulla"
+    @modal-off="showModal = false"
+    :button1="button1Text"
+    :button2="button2Text"
+    class="modal"
+    />
+
+  <h2>Ricerca libri</h2>
   <h3>Ricerca per disponibilità, titolo o autore</h3>
   <form class="form-container">
     <input type="text" v-model="filtro" placeholder="Inserisci testo..." />
@@ -93,13 +131,20 @@ const libriFiltrati = computed(() => {
       <label for="disponibile">Solo disponibili</label>
 
       <input id="disponibile" type="checkbox" v-model="soloDisponibili" />
-      <CustomSelect v-model="genereSelezionato" :opzioni="generi" @change="libriFiltrati" />
+      <CustomSelect v-model="genereSelezionato" :opzioni="generi" :text="text" />
     </div>
   </form>
 
   <h3>{{ libriFiltrati.length }} libri trovati su {{ libri.length }}</h3>
   <div class="parent">
-    <LibroCard v-for="libro in libriFiltrati" :key="libro.id" v-bind="libro" class="libro-card" />
+    <LibroCard
+      v-for="libro in libriFiltrati"
+      :key="libro.id"
+      v-bind="libro"
+      @add-preferiti="togglePreferito"
+      @on-delete="removeConfirmation"
+      :preferito="arrayPreferiti.has(libro.id)"
+      :class="[libro-card, { 'card-deleting': isDeleting(libro.id)}]" />
   </div>
 </template>
 
@@ -108,6 +153,10 @@ const libriFiltrati = computed(() => {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+}
+
+.modal {
+  z-index: 10;
 }
 
 .filtro-genere {
