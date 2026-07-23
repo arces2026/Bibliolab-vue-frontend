@@ -4,11 +4,10 @@ import { useLibri } from '@/composable/useLibri'
 import LoadingSpinner from './LoadingSpinner.vue'
 
 
-const libriComp = useLibri()
+const { getAutori, getCategorie, getLibro, newLibro, updateLibro } = useLibri()
 const success = ref('')
 const error = ref('')
 const loading = ref(false)
-
 
 const autori = ref([])
 const categ = ref([])
@@ -27,13 +26,13 @@ const libro = reactive({
 
 onMounted(async () => {
   try {
-    autori.value = await libriComp.getAutori('/api/v1/autori/') //django api view da creare
+    autori.value = await getAutori('/api/v1/autori/') //django api view da creare
   } catch (err) {
     console.error('Errore nel recupero degli autori', err.message)
   }
 
   try {
-    categ.value = await libriComp.getCategorie('/api/v1/categorie/')
+    categ.value = await getCategorie('/api/v1/categorie/')
   } catch (err) {
     console.error('Errore nel recupero delle categorie', err.message)
   }
@@ -41,7 +40,7 @@ onMounted(async () => {
   // Fetch book data if editing
   if (props.isEdit && props.idLibro) {
     try {
-      let result = await libriComp.getLibro(`/api/v1/libri/${props.idLibro}`)
+      let result = await getLibro(`/api/v1/libri/${props.idLibro}`)
 
       // Populate form with existing data
       libro.titolo = result.titolo || ''
@@ -79,12 +78,12 @@ const salva = async () => {
 
     if (props.isEdit && props.idLibro) {
       // Update existing book
-      result = await libriComp.updateLibro(`/api/v1/libri/${props.idLibro}/`, libro)
+      result = await updateLibro(`/api/v1/libri/${props.idLibro}/`, libro)
       emit('updated', result)
       // success.value = `Libro "${libro.titolo}" aggiornato correttamente`
     } else {
       // Create new book
-      result = await libriComp.newLibro(`/api/v1/libri/`, libro)
+      result = await newLibro(`/api/v1/libri/`, libro)
       emit('saved', result)
       // success.value = `Libro "${libro.titolo}" salvato correttamente. Reindirizzamento...`
 

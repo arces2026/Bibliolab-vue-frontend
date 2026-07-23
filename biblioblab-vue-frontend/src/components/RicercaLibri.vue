@@ -15,11 +15,9 @@ const filtro = ref('')
 const genereSelezionato = ref('Tutti')
 const soloDisponibili = ref(false)
 const loading = ref(false)
-const libroComposable = useLibri()
 
-// Debug: Check if libroComposable has eliminaLibro method
-console.log('libroComposable:', libroComposable)
-console.log('eliminaLibro method:', libroComposable.eliminaLibro)
+const { getLibri, getCategorie} = useLibri()
+
 
 // Use the preferiti composable
 const { arrayPreferiti, togglePreferito} = usePreferiti()
@@ -34,13 +32,13 @@ const {
   onConferma,
   onAnnulla,
   isDeleting,
-} = useEliminaLibro(libri, libroComposable)
+} = useEliminaLibro(libri)
 
 const fetchData = async () => {
   try {
     const [libriData, generiData] = await Promise.all([
-      libroComposable.getLibri('/api/v1/libri/'),
-      libroComposable.getCategorie('/api/v1/categorie/'),
+      getLibri('/api/v1/libri/'),
+      getCategorie('/api/v1/categorie/'),
     ])
     libri.value = libriData
     generi.value = generiData
@@ -67,7 +65,7 @@ watch(filtro, (newFiltro, oldFiltro) => {
 
   timeout = setTimeout(async () => {
     try {
-      libri.value = await libroComposable.getLibri('/api/v1/libri/')
+      libri.value = await getLibri('/api/v1/libri/')
     } catch (err) {
       console.error('Error while fetching libri', err)
     } finally {
@@ -105,13 +103,6 @@ const libriFiltrati = computed(() => {
 </script>
 
 <template>
-
-  <!-- <h2>Catalogo</h2>
-  <ul>
-    <li v-for="libro in libri" :key="libro.id">
-      {{ libro.titolo }} di {{ libro.autore }} - genere: {{ libro.genere }} ({{ libro.anno }})
-    </li>
-  </ul> -->
   <LoadingSpinner v-if="loading || deleteLoading"/>
   <ModalVue
     v-if="showModal"

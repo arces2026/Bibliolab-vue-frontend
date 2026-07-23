@@ -8,16 +8,20 @@ import LoadingSpinner from '@/components/LoadingSpinner.vue'
 const route = useRoute()
 const authStore = useAuthStore()
 const libro = ref({})
-const compLibro = useLibri()
+const { getLibro} = useLibri()
 const id = ref(null)
+const loading = ref(false)
 
 onMounted(async () => {
   const id = route.params.id //get id from route parameters
-  libro.value = await compLibro.getLibro(`/api/v1/libri/${id}`)
+  loading.value = true
+  libro.value = await getLibro(`/api/v1/libri/${id}`)
+  loading.value = false
 })
 </script>
 
 <template>
+  <LoadingSpinner v-if="loading" />
   <div class="card-container">
     <div class="libro-card">
       <div class="libro-cover">
