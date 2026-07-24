@@ -1,43 +1,104 @@
 <script setup>
-import { useAuthStore } from '@/stores/authStore';
-import { ref } from 'vue';
+import { useAuthStore } from '@/stores/authStore'
+import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 
 const authStore = useAuthStore()
+const router = useRouter()
 
 const username = ref('')
 const password = ref('')
 const password2 = ref('')
+const nome = ref('')
+const cognome = ref('')
+const email = ref('')
+
+
+onMounted(() => {
+  authStore.success = null
+  authStore.error = null
+})
 
 const onSubmit = async() => {
-  //Create userData object from fields
-  const userData = {
-  username: username.value,
-  password: password.value,
-  password2: password2.value
-  }
-   // Log the data being submitted
-  console.log('📤 Submitting form data:', userData) // or whatever your form data variable is
-
-  // Frontend validation
+    // Frontend validation
   if (password.value !== password2.value){
     authStore.error = 'Le passwords non coincidono'
     return
   }
 
+  //Create userData object from fields
+  const userData = {
+    username: username.value,
+    password: password.value,
+    password2: password2.value,
+    nome: nome.value,
+    cognome: cognome.value,
+    email: email.value,
+  }
+  // Log the data being submitted
+  console.log('📤 Submitting form data:', userData) // or whatever your form data variable is
+
+
   await authStore.register(userData)
+  if (authStore.success) router.push('/ricerca')
 }
- </script>
+</script>
 
 <template>
   <h2>Form registrazione</h2>
   <form @submit.prevent="onSubmit">
+    <label for="nome">Nome</label>
+    <input autocomplete="given-name" placeholder="es. Mario" type="text" id="nome" v-model="nome" />
+    <label for="cognome">Cognome</label>
+    <input
+      autocomplete="family-name"
+      placeholder="es. Rossi"
+      type="text"
+      id="cognome"
+      v-model="cognome"
+    />
+    <label for="email">Email</label>
+    <input
+      autocomplete="email"
+      placeholder="es. mario@example.com"
+      type="email"
+      id="email"
+      v-model="email"
+    />
     <label for="username">Username</label>
-    <input type="text" id="username" v-model="username">
+    <input
+      autocomplete="username"
+      placeholder="es. mario-rossi"
+      type="text"
+      id="username"
+      v-model="username"
+    />
     <label for="password1">Password</label>
-    <input type="password" id="password1" v-model="password">
-    <label for="password2">Retype password</label>
-    <input type="password" id="password2" v-model="password2">
-    <button :disabled="authStore.loading">{{ authStore.loading? 'Registrazione...' : 'Registrati'}}</button>
+    <input
+      autocomplete="new-password"
+      placeholder="inserisci password..."
+      type="password"
+      id="password1"
+      v-model="password"
+    />
+    <label for="password2">Conferma password</label>
+    <p v-if="password && password2 && password !== password2" class="error">
+      Le password non coincidono
+    </p>
+    <input
+      autocomplete="new-password"
+      placeholder="reinserisci la password..."
+      type="password"
+      id="password2"
+      v-model="password2"
+    />
+    <button
+      :disabled="
+        authStore.loading || !password || !password2 || !username || password !== password2
+      "
+    >
+      {{ authStore.loading ? 'Registrazione...' : 'Registrati' }}
+    </button>
     <p v-if="authStore.success" class="success">{{ authStore.success }}</p>
     <p v-if="authStore.error" class="error">{{ authStore.error }}</p>
   </form>
@@ -50,5 +111,55 @@ const onSubmit = async() => {
 
 .error {
   color: red;
+}
+
+h2 {
+  text-align: center;
+  margin: 30px auto;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  max-width: 400px;
+  gap: 20px;
+  margin: auto;
+}
+
+input {
+  padding: 5px;
+  border-radius: 5px;
+}
+
+label {
+  margin-bottom: -20px;
+}
+
+button {
+  padding: 15px;
+  margin: 30px auto;
+  width: 200px;
+  border-radius: 8px;
+  background-color: rgb(225, 225, 236);
+  font-size: 1.5rem;
+  color: rgb(89, 89, 201);
+  box-shadow: 3px 3px 6px black;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+button:hover {
+  scale: 1.05;
+}
+
+button:active {
+  scale: 0.95;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  scale: 0.95;
+  box-shadow: none;
+  color: gray;
 }
 </style>

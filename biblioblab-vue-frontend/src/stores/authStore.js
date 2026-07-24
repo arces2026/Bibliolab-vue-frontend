@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+
 
 export const useAuthStore = defineStore('auth', () => {
   const utente = ref(null) //{id, username, email, isStaff}
@@ -11,12 +11,12 @@ export const useAuthStore = defineStore('auth', () => {
   const success = ref(null)
   const loading = ref(false)
   const API_BASE = '/api/vue/auth/'
-  const route = useRoute()
-  const router = useRouter()
+
 
   async function register(userData) {
     loading.value = true
     error.value = null
+    success.value = null
 
     try {
       // console.log('📝 Registering with data:', userData)
