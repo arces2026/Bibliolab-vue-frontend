@@ -184,6 +184,7 @@ const libriFiltrati = computed(() => {
   transition: all 0.3s ease;
   background-color: rgb(152, 152, 177);
 }
+
 .modal {
   z-index: 10;
 }

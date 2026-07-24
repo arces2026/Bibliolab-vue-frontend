@@ -8,12 +8,6 @@ const routes = [
     component: () => import ('@/views/AboutView.vue'),
     meta: { titoloPagina: 'About'}
   },
-  // {
-  //   path: '/libri',
-  //   name: 'catalogo',
-  //   component: () => import('@/views/CatalogoView.vue'),
-  //   meta: { titoloPagina: 'Catalogo Libri' },
-  // },
   {
     path: `/libri/:id`,
     name: 'libro',
@@ -43,6 +37,12 @@ const routes = [
     name: 'autori',
     component: () => import('@/views/AutoriView.vue'),
     meta: { titoloPagina: 'Autori'}
+  },
+  {
+    path: '/autori/:id',
+    name: 'autore',
+    component: () => import('@/views/DettaglioAutoreView.vue'),
+    meta: { titoloPagina: 'Autore'}
   },
   {
     path: '/login',

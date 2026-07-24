@@ -1,6 +1,6 @@
 <script setup>
 import { useAuthStore } from '@/stores/authStore';
-import { computed } from 'vue';
+
 
 const authStore = useAuthStore()
 
@@ -19,48 +19,50 @@ const props = defineProps({
     default: true
   },
   anno_pubblicazione: String,
-  data_nascita: String,
-  biografia: String,
+  detailLink: String,
+  preferito: String
 })
+
+// console.log({item: props.item})
 </script>
 
 <template>
   <div class="container">
     <section class="cover">
-      <RouterLink class="link-to-dettaglio" :to="{ name: detailLink, params: { id: id } }">
-        <img :src="picture" :alt="picAlt" class="image" />
+      <RouterLink class="link-to-dettaglio" :to="{ name: detailLink, params: { id: item.id } }">
+        <img :src="picture" :alt="`${item.nome} ${item.cognome}`" class="image" />
       </RouterLink>
-      <span v-if='isbn' class="isbn">isbn: {{ isbn }} </span>
+      <span v-if='item.isbn' class="isbn">isbn: {{ item.isbn }} </span>
     </section>
 
     <section class="header">
       <h3 v-if="titolo">{{ titolo }} <span v-if="preferito">⭐</span></h3>
-      <p v-if="autore_oggetto"><strong>Autore</strong>: {{ autore_oggetto.nome }} {{ autore_oggetto.cognome }}</p>
-      <h3 v-if="cognome">{{ autore.nome }} {{ autore.cognome }}</h3>
+      <p v-if="item.autore_oggetto"><strong>Autore</strong>: {{ item.autore_oggetto.nome }} {{ item.autore_oggetto.cognome }}</p>
+      <h3 v-if="item.cognome">{{ item.nome }} {{ item.cognome }}</h3>
       <hr />
     </section>
 
     <section class="genere">
       <ul class="genere">
-        <strong>{{categorie ? 'Genere' : 'Libri'}}</strong
+        <strong>{{item.categorie ? 'Genere' : 'Libri'}}</strong
         >:
-        <li v-for="item in relatedArray" :key="item.id">{{ item }}</li>
+        <li v-for="oggetto in relatedArray" :key="oggetto.id">{{ oggetto }}</li>
       </ul>
 
       <hr />
     </section>
 
     <section class="description">
-      <p v-if="descrizione"><strong>Descrizione</strong>: {{ descrizione.slice(0, 200) }}...</p>
-      <p v-if="biografia"><strong>Biografia</strong>: {{ biografia.slice(0, 200) }}...</p>
+      <p v-if="item.descrizione"><strong>Descrizione</strong>: {{ item.descrizione.slice(0, 200) }}...</p>
+      <p v-if="item.biografia"><strong>Biografia</strong>: {{ item.biografia.slice(0, 200) }}...</p>
       <hr />
     </section>
     <section class="anno">
-      <span v-if="anno_pubblicazione"><strong>pubblicato nel</strong>: {{ anno }}</span
-      ><span v-if="anno_pubblicazione" :class="disponibile ? 'green' : 'red'">{{
+      <span v-if="item.anno_pubblicazione"><strong>pubblicato nel</strong>: {{ item.anno_pubblicazione }}</span
+      ><span v-if="item.anno_pubblicazione" :class="disponibile ? 'green' : 'red'">{{
         disponibile ? 'disponibile' : 'non disponibile'
       }}</span>
-      <span v-if="data_nascita"><strong>Nato nel</strong> {{ data_nascita }}</span>
+      <span v-if="item.data_nascita"><strong>Nato nel</strong> {{ item.data_nascita }}</span>
       <button @click="addPreferiti(id)" class="add-preferiti">{{ preferito ? 'Rimuovi' :'Aggiungi'}} ⭐</button>
     </section>
 

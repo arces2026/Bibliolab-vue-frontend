@@ -47,17 +47,25 @@ export function useLibri() {
     try {
       const res = await fetch(url)
 
-      // Log the full response
-      console.log('Response status:', res.status)
-      console.log('Response headers:', [...res.headers])
-
       if (!res.ok)
         throw new Error(`Errore nel recupero degli autori, ${res.status}, ${res.statusText}`)
-      console.log({ res: res })
       const data = await res.json()
-      autori.value = data.results
-      console.log({ autori: autori.value })
-      return autori.value
+
+      // Check if it's a list or a single item
+      if (Array.isArray(data)) {
+        // If the API returns an array directly (not wrapped in results)
+        autori.value = data
+        return data
+      } else if (data.results && Array.isArray(data.results)) {
+        // If it's a paginated list (has results property)
+        autori.value = data.results
+        return data.results
+      } else {
+        // It's a single object (detail endpoint)
+        // Store it as a single item
+        autori.value = [data] // Store as array for consistency
+        return data // Return the object directly
+      }
     } catch (err) {
       console.error('Errore catturato recuperando gli autori', err.message)
       throw err
