@@ -39,6 +39,12 @@ const routes = [
     meta: { titoloPagina: 'Ricerca Libri' },
   },
   {
+    path: '/autori',
+    name: 'autori',
+    component: () => import('@/views/AutoriView.vue'),
+    meta: { titoloPagina: 'Autori'}
+  },
+  {
     path: '/login',
     name: 'login',
     component: () => import('@/views/LoginView.vue'),

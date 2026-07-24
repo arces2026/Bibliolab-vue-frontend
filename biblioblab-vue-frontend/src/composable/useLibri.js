@@ -47,10 +47,16 @@ export function useLibri() {
     try {
       const res = await fetch(url)
 
-      if (!res.ok) throw new Error('Errore nel recupero degli autori', res.status, res.statusText)
+      // Log the full response
+      console.log('Response status:', res.status)
+      console.log('Response headers:', [...res.headers])
 
+      if (!res.ok)
+        throw new Error(`Errore nel recupero degli autori, ${res.status}, ${res.statusText}`)
+      console.log({ res: res })
       const data = await res.json()
-      autori.value = data.results || data
+      autori.value = data.results
+      console.log({ autori: autori.value })
       return autori.value
     } catch (err) {
       console.error('Errore catturato recuperando gli autori', err.message)
