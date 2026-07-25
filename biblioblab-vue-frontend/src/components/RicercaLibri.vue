@@ -15,6 +15,7 @@ const filtro = ref('')
 const genereSelezionato = ref('Tutti')
 const soloDisponibili = ref(false)
 const loading = ref(false)
+const success = ref('Sicuro di voler eliminare il libro?')
 
 const { getLibri, getCategorie } = useLibri()
 
@@ -110,6 +111,7 @@ const libriFiltrati = computed(() => {
     @modal-off="showModal = false"
     :button1="button1Text"
     :button2="button2Text"
+    :success="success"
     class="modal"
   />
 
@@ -140,7 +142,7 @@ const libriFiltrati = computed(() => {
       :picture="libro.cover_url"
       :related-array="libro.categorie"
       @add-preferiti="togglePreferito(libro.id)"
-      @on-delete="removeConfirmation"
+      @on-delete="removeConfirmation(libro.id)"
       :detail-link="'libro'"
       :preferito="arrayPreferiti.has(libro.id)"
       :class="['libro-card', { 'card-deleting': isDeleting(libro.id) }]"

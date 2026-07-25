@@ -17,7 +17,6 @@ export function useEliminaItem(items, options = {}) {
   const {
     baseUrl = '/api/v1/libri/', // Default for books
     itemName = 'libro',
-    refreshFn = null, // What the hell is this ???
     deleteDelay = 400,
   } = options
 
@@ -63,9 +62,7 @@ export function useEliminaItem(items, options = {}) {
 
       //Wait for animation to complete
       setTimeout(() => {
-        if (refreshFn) {
-          refreshFn()
-        } else if (isRef && Array.isArray(items.value)) {
+        if (isRef && Array.isArray(items.value)) {
           const index = items.value.findIndex((item) => item.id === id)
           if (index !== -1) {
             items.value.splice(index, 1)

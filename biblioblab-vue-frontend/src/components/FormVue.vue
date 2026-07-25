@@ -1,10 +1,15 @@
 <script setup>
 import { computed, reactive, ref, onMounted } from 'vue'
 import { useLibri } from '@/composable/useLibri'
+import { useCreaItem } from '@/composable/useCreaItem.js'
 import LoadingSpinner from './LoadingSpinner.vue'
+import { useRoute } from 'vue-router'
 
-const { getAutori, getCategorie, getLibro, newLibro, updateLibro } = useLibri()
-const success = ref('')
+const { newItem } = useCreaItem()
+const { getAutori, getCategorie, getLibro, updateLibro } = useLibri()
+// const { getAutori, getCategorie, getLibro, newLibro, updateLibro } = useLibri()
+const route = useRoute()
+const success = ref(null)
 const error = ref('')
 const loading = ref(false)
 
@@ -21,6 +26,13 @@ const libro = reactive({
   disponibile: true,
   descrizione: '',
   cover_url: '',
+})
+
+const autore = reactive({
+  nome: '',
+  cognome: '',
+  data_nascita: null,
+  biografia: '',
 })
 
 onMounted(async () => {
@@ -82,24 +94,27 @@ const salva = async () => {
       // success.value = `Libro "${libro.titolo}" aggiornato correttamente`
     } else {
       // Create new book
-      result = await newLibro(`/api/v1/libri/`, libro)
+      result = await newItem(`/api/v1/autori/`, autore)
       emit('saved', result)
       // success.value = `Libro "${libro.titolo}" salvato correttamente. Reindirizzamento...`
 
       // Reset form for new book (optional)
-      if (!props.isEdit) {
-        Object.assign(libro, {
-          titolo: '',
-          autore: '',
-          isbn: '',
-          anno_pubblicazione: null,
-          categorie: [],
-          disponibile: true,
-          descrizione: '',
-          cover_url: '',
-        })
-      }
+      // if (!props.isEdit) {
+      //   Object.assign(libro, {
+      //     titolo: '',
+      //     autore: '',
+      //     isbn: '',
+      //     anno_pubblicazione: null,
+      //     categorie: [],
+      //     disponibile: true,
+      //     descrizione: '',
+      //     cover_url: '',
+      //   })
+      // }
+
+      success.value = 'Item creato con successo.'
     }
+    
   } catch (err) {
     console.log('Caught err', err.message)
     error.value = `Errore nel salvataggio del libro`
@@ -110,9 +125,11 @@ const emit = defineEmits(['saved', 'updated'])
 </script>
 
 <template>
-  <h2>{{ isEdit ? 'Modifica libro' : 'Inserisci nuovo libro' }}</h2>
-
-  <form @submit.prevent="salva" class="form">
+  <form
+    v-if="route.path === '/inserisci-libro' || route.path === '/modifica-libro'"
+    @submit.prevent="salva"
+    class="form"
+  >
     <LoadingSpinner v-if="loading" />
 
     <input type="text" v-model="libro.titolo" placeholder="titolo" required />
@@ -143,15 +160,28 @@ const emit = defineEmits(['saved', 'updated'])
     <p v-if="success" class="para success">{{ success }}</p>
     <p v-else class="para error">{{ error }}</p>
   </form>
+
+  <form v-else @submit.prevent="salva" class="form">
+    <label for="nome">Nome</label>
+    <input v-model="autore.nome" type="text" id="nome" autocomplete="name" placeholder="nome...">
+    <label for="cognome">Cognome</label>
+    <input v-model="autore.cognome" type="text" id="cognome" autocomplete="family-name" placeholder="nome...">
+    <label for="data-nascita">Data di nascita</label>
+    <input v-model="autore.data_nascita" type="date" id="data-nascita" autocomplete="bday-day" placeholder="data di nascita...">
+    <label for="biografia">Biografia</label>
+    <textarea v-model="autore.biografia" type="text" id="biografia" autocomplete="name" placeholder="biografia..." ></textarea>
+    <button>Salva</button>
+  </form>
+  <p v-if="success" class="para success">{{ success }}</p>
+  <p v-else class="para error">{{ error }}</p>
 </template>
 
 <style scoped>
 * {
   box-sizing: border-box;
+  /* border: 1px solid; */
 }
-h2 {
-  text-align: center;
-}
+
 .form {
   display: flex;
   flex-direction: column;
@@ -161,11 +191,18 @@ h2 {
   justify-content: center;
   margin: 10px auto;
 }
+
+label {
+  margin-bottom: -10px;
+  margin-right: auto;
+  color: white;
+}
+
 input,
 select,
 textarea {
   width: 100%;
-  padding: 4px;
+  padding: 8px;
   border-radius: 4px;
 }
 input[type='checkbox'],

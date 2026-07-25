@@ -10,6 +10,7 @@ import LoadingSpinner from './LoadingSpinner.vue'
 const { getAutori } = useLibri()
 const autori = ref([])
 const loading = ref(false)
+const success = ref('Sicuro di voler eliminare l\'autore?')
 
 // Use the preferiti composable
 const { arrayPreferiti, togglePreferito } = usePreferiti()
@@ -27,13 +28,6 @@ const {
 } = useEliminaItem(autori, {
   baseUrl: '/api/v1/autori/',
   itemName: 'autore',
-  refreshFn: async () => {
-    try {
-      autori.value = await getAutori('/api/v1/autori/')
-    } catch (err) {
-      console.error('Errore recuperando gli autori', err.message)
-    }
-  }
 })
 
 onMounted(async () => {
@@ -55,6 +49,7 @@ onMounted(async () => {
     @modal-off="showModal = false"
     :button1="button1Text"
     :button2="button2Text"
+    :success="success"
     class="modal"
   />
   <TransitionGroup name="card" tag="div" class="parent">

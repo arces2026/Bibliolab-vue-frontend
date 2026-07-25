@@ -23,11 +23,15 @@ const authStore = useAuthStore()
 
 <style scoped>
 .navbar {
+  position: sticky;
+  top: 0;
+  left: 0;
   display: flex;
   justify-content: space-evenly;
   padding: 20px;
   background-color: rgb(37, 33, 33);
   color: white;
+  z-index: 5;
 }
 
 .navbar-link {
