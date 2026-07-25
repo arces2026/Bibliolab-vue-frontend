@@ -24,7 +24,7 @@ const routes = [
     path: '/inserisci-libro',
     name: 'inserisci-libro',
     component: () => import('@/views/InserisciLibroView.vue'),
-    meta: { titoloPagina: 'Scheda Libro' },
+    meta: { titoloPagina: 'Inserisci Libro' },
   },
   {
     path: '/ricerca',
@@ -37,6 +37,12 @@ const routes = [
     name: 'autori',
     component: () => import('@/views/AutoriView.vue'),
     meta: { titoloPagina: 'Autori'}
+  },
+  {
+    path: '/inserisci-autore',
+    name: 'inserisci-autore',
+    component: () => import('@/views/InserisciAutoreView.vue'),
+    meta: { titoloPagina: 'Inserisci Autore'}
   },
   {
     path: '/autori/:id',

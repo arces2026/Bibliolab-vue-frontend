@@ -141,6 +141,7 @@ const libriFiltrati = computed(() => {
       :related-array="libro.categorie"
       @add-preferiti="togglePreferito(libro.id)"
       @on-delete="removeConfirmation"
+      :detail-link="'libro'"
       :preferito="arrayPreferiti.has(libro.id)"
       :class="['libro-card', { 'card-deleting': isDeleting(libro.id) }]"
       />

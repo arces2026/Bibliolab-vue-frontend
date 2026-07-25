@@ -13,6 +13,7 @@ export const useAuthStore = defineStore('auth', () => {
   const API_BASE = '/api/vue/auth/'
 
 
+
   async function register(userData) {
     loading.value = true
     error.value = null
@@ -133,6 +134,7 @@ export const useAuthStore = defineStore('auth', () => {
         ?.split('=')[1] || ''
     )
   }
+
 
   return { isAuthenticated, utente, isLogged, isStaff, loading, success, error, register, login, logout, caricaUtente, getCsrf }
 })
