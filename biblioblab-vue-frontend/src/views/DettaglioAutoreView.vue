@@ -23,4 +23,7 @@ onMounted(async() => {
 
 <template>
   <h1>Dettaglio autore</h1>
+  <div>
+    {{ autore }}
+  </div>
 </template>

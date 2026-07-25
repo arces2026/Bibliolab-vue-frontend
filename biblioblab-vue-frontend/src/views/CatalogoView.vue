@@ -3,13 +3,12 @@ import { ref, onMounted, computed } from 'vue'
 import LibroCard from '@/components/LibroCard.vue'
 import { useLibri } from '@/composable/useLibri'
 import { usePreferiti } from '@/composable/usePreferiti'
-import { useEliminaLibro } from '@/composable/useEliminaLibro'
+import { useEliminaLibro } from '@/composable/useEliminaItem'
 import ModalVue from '@/components/ModalVue.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import RicercaLibri from '@/components/RicercaLibri.vue'
 
-
-const { getLibri} = useLibri()
+const { getLibri } = useLibri()
 const libri = ref([])
 
 // Use the preferiti composable
@@ -26,7 +25,6 @@ const {
   onAnnulla,
   isDeleting,
 } = useEliminaLibro(libri)
-
 
 const libriDisponibili = computed(() => {
   return libri.value.filter((l) => l.disponibile).length
@@ -80,7 +78,7 @@ h2 {
   transition: all 0.4s ease;
 }
 
- /*  Not needed in this case*/
+/*  Not needed in this case*/
 .card-enter-from {
   opacity: 0;
   transform: translateY(30px) scale(0.9);

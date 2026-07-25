@@ -1,10 +1,35 @@
 <script setup>
 import CardVue from '@/components/CardVue.vue'
 import { useLibri } from '@/composable/useLibri'
+import { useEliminaItem } from '@/composable/useEliminaItem'
 import { onMounted, ref } from 'vue'
+import ModalVue from './ModalVue.vue'
+import LoadingSpinner from './LoadingSpinner.vue'
 
 const { getAutori } = useLibri()
 const autori = ref([])
+const loading = ref(false)
+// Use the delete composable
+const {
+  showModal,
+  button1Text,
+  button2Text,
+  loading: deleteLoading,
+  removeConfirmation,
+  onConferma,
+  onAnnulla,
+  isDeleting,
+} = useEliminaItem(autori, {
+  baseUrl: '/api/v1/autori/',
+  itemName: 'autore',
+  refreshFn: async () => {
+    try {
+      autori.value = await getAutori('/api/v1/autori/')
+    } catch (err) {
+      console.error('Errore recuperando gli autori', err.message)
+    }
+  }
+})
 
 onMounted(async () => {
   try {
@@ -17,19 +42,27 @@ onMounted(async () => {
 </script>
 
 <template>
-<TransitionGroup name="card" tag="div" class="parent">
-  <div class="parent" v-for="autore in autori" :key="autore.id">
-    <CardVue
-      :item="autore"
-      :picture="autore.foto_url"
-      :pic-alt="autore.nome + autore.cognome"
-      :related-array="autore.libri_titles"
-      :data_nascita="autore.data_nascita"
-      :biografia="autore.biografia"
-      :detail-link="'autore'"
-      class="libro-card"
-    />
-  </div>
+  <LoadingSpinner v-if="loading || deleteLoading" />
+  <ModalVue
+    v-if="showModal"
+    @next="onConferma"
+    @exit="onAnnulla"
+    @modal-off="showModal = false"
+    :button1="button1Text"
+    :button2="button2Text"
+    class="modal"
+  />
+  <TransitionGroup name="card" tag="div" class="parent">
+    <div class="parent" v-for="autore in autori" :key="autore.id">
+      <CardVue
+        :item="autore"
+        :picture="autore.foto_url"
+        :related-array="autore.libri_titles"
+        @on-delete="removeConfirmation(autore.id)"
+        :detail-link="'autore'"
+        :class="['libro-card', { 'card-deleting': isDeleting(autore.id) }]"
+      />
+    </div>
   </TransitionGroup>
 </template>
 
@@ -49,7 +82,7 @@ h1 {
   transition: all 0.4s ease;
 }
 
- /*  Not needed in this case*/
+/*  Not needed in this case*/
 .card-enter-from {
   opacity: 0;
   transform: translateY(30px) scale(0.9);

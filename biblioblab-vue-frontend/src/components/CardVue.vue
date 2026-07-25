@@ -1,8 +1,9 @@
 <script setup>
 import { useAuthStore } from '@/stores/authStore';
+import { computed } from 'vue';
 
 
-const authStore = useAuthStore()
+const { isStaff } = useAuthStore()
 
 //Generic props - just accept an item with any structure
 const props = defineProps({
@@ -10,18 +11,27 @@ const props = defineProps({
     type: Object,
     required: true
   },
-  picture: String,
-  picAlt: String,
-  titolo: String,
+  picture: String, //custom props with computed default
   relatedArray: Array, //generi o libri
-  disponibile: {
-    type: Boolean,
-    default: true
-  },
-  anno_pubblicazione: String,
   detailLink: String,
   preferito: String
 })
+
+// Create a computed property for the cover URL
+const picture = computed(() => {
+  if (props.picture?.trim()) {
+    return props.picture
+  }
+
+  const label = props.item.titolo || props.item.cognome || 'Foto non\n disponibile'
+  return `https://placehold.co/300x450/e2e8f0/1e293b?text=${encodeURIComponent(label)}`
+})
+
+const emit = defineEmits(['addPreferiti', 'onDelete'])
+
+const onDelete = () => emit('onDelete', props.id)
+
+const addPreferiti = () => emit('addPreferiti', props.id)
 
 // console.log({item: props.item})
 </script>
@@ -29,14 +39,14 @@ const props = defineProps({
 <template>
   <div class="container">
     <section class="cover">
-      <RouterLink class="link-to-dettaglio" :to="{ name: detailLink, params: { id: item.id } }">
+      <RouterLink class="link-to-dettaglio" :to="{ name: props.detailLink, params: { id: item.id } }">
         <img :src="picture" :alt="`${item.nome} ${item.cognome}`" class="image" />
       </RouterLink>
       <span v-if='item.isbn' class="isbn">isbn: {{ item.isbn }} </span>
     </section>
 
     <section class="header">
-      <h3 v-if="titolo">{{ titolo }} <span v-if="preferito">⭐</span></h3>
+      <h3 v-if="item.titolo">{{ item.titolo }} <span v-if="preferito">⭐</span></h3>
       <p v-if="item.autore_oggetto"><strong>Autore</strong>: {{ item.autore_oggetto.nome }} {{ item.autore_oggetto.cognome }}</p>
       <h3 v-if="item.cognome">{{ item.nome }} {{ item.cognome }}</h3>
       <hr />
@@ -60,14 +70,13 @@ const props = defineProps({
     <section class="anno">
       <span v-if="item.anno_pubblicazione"><strong>pubblicato nel</strong>: {{ item.anno_pubblicazione }}</span
       ><span v-if="item.anno_pubblicazione" :class="disponibile ? 'green' : 'red'">{{
-        disponibile ? 'disponibile' : 'non disponibile'
+        item.disponibile ? 'disponibile' : 'non disponibile'
       }}</span>
       <span v-if="item.data_nascita"><strong>Nato nel</strong> {{ item.data_nascita }}</span>
       <button @click="addPreferiti(id)" class="add-preferiti">{{ preferito ? 'Rimuovi' :'Aggiungi'}} ⭐</button>
     </section>
 
-    <button v-if="authStore.isStaff" class="elimina" @click="onDelete">Elimina libro</button>
-    <!-- <button v-if="authStore.isStaff" class="elimina" @click="onDelete">Elimina libro</button> -->
+    <button v-if="isStaff" class="elimina" @click="onDelete">Elimina libro</button>
   </div>
 </template>
 

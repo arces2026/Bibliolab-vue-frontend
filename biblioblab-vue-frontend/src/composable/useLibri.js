@@ -138,26 +138,6 @@ export function useLibri() {
     }
   }
 
-  const eliminaLibro = async(url) => {
-    try {
-      const res = await fetch(url, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': authStore.getCsrf(),
-        },
-      })
-      if (!res.ok)
-        throw new Error(
-          `Errore eliminando il libro ${libro.value.titolo}: ${res.status} ${res.statusText}`,
-        )
-     return { success: true, status: res.status }
-    } catch (err) {
-      console.error('Errore catturato eliminando il libro ', libro.value.titolo, err.message)
-      throw err
-    }
-  }
-
   return {
     libri,
     loading,
@@ -166,7 +146,6 @@ export function useLibri() {
     getLibro,
     newLibro,
     updateLibro,
-    eliminaLibro,
     getAutori,
     getCategorie,
   }

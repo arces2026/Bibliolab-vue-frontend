@@ -78,7 +78,7 @@ const salva = async () => {
 
     if (props.isEdit && props.idLibro) {
       // Update existing book
-      result = await updateLibro(`/api/v1/libri/${props.idLibro}/`, libro)
+      result = await updateLibro(`/api/v1/libri/${props.idLibro}`, libro)
       emit('updated', result)
       // success.value = `Libro "${libro.titolo}" aggiornato correttamente`
     } else {

@@ -5,7 +5,7 @@ import LibroCard from './LibroCard.vue'
 import CustomSelect from './CustomSelect.vue'
 import { useLibri } from '@/composable/useLibri.js'
 import { usePreferiti } from '@/composable/usePreferiti.js'
-import { useEliminaLibro } from '@/composable/useEliminaLibro.js'
+import { useEliminaItem } from '@/composable/useEliminaItem.js'
 import ModalVue from './ModalVue.vue'
 
 const libri = ref([])
@@ -16,11 +16,10 @@ const genereSelezionato = ref('Tutti')
 const soloDisponibili = ref(false)
 const loading = ref(false)
 
-const { getLibri, getCategorie} = useLibri()
-
+const { getLibri, getCategorie } = useLibri()
 
 // Use the preferiti composable
-const { arrayPreferiti, togglePreferito} = usePreferiti()
+const { arrayPreferiti, togglePreferito } = usePreferiti()
 
 // Use the delete composable
 const {
@@ -32,7 +31,7 @@ const {
   onConferma,
   onAnnulla,
   isDeleting,
-} = useEliminaLibro(libri)
+} = useEliminaItem(libri)
 
 const fetchData = async () => {
   try {
@@ -103,7 +102,7 @@ const libriFiltrati = computed(() => {
 </script>
 
 <template>
-  <LoadingSpinner v-if="loading || deleteLoading"/>
+  <LoadingSpinner v-if="loading || deleteLoading" />
   <ModalVue
     v-if="showModal"
     @next="onConferma"
@@ -112,7 +111,7 @@ const libriFiltrati = computed(() => {
     :button1="button1Text"
     :button2="button2Text"
     class="modal"
-    />
+  />
 
   <h1>Catalogo</h1>
   <h3>Ricerca per titolo o autore</h3>
@@ -122,22 +121,21 @@ const libriFiltrati = computed(() => {
       <label for="disponibile">Mostra solo disponibili</label>
 
       <input id="disponibile" type="checkbox" v-model="soloDisponibili" />
-      </div>
-      <CustomSelect v-model="genereSelezionato" :opzioni="generi" :text="text" />
-
+    </div>
+    <CustomSelect v-model="genereSelezionato" :opzioni="generi" :text="text" />
   </form>
 
   <h3>{{ libriFiltrati.length }} libri trovati su {{ libri.length }}</h3>
   <TransitionGroup name="card" tag="div" class="parent">
-  <div class="parent"  v-for="libro in libriFiltrati"
-      :key="libro.id">
-    <LibroCard
-      v-bind="libro"
-      @add-preferiti="togglePreferito"
-      @on-delete="removeConfirmation"
-      :preferito="arrayPreferiti.has(libro.id)"
-      :class="['libro-card', { 'card-deleting': isDeleting(libro.id)}]" />
-  </div>
+    <div class="parent" v-for="libro in libriFiltrati" :key="libro.id">
+      <LibroCard
+        v-bind="libro"
+        @add-preferiti="togglePreferito"
+        @on-delete="removeConfirmation"
+        :preferito="arrayPreferiti.has(libro.id)"
+        :class="['libro-card', { 'card-deleting': isDeleting(libro.id) }]"
+      />
+    </div>
   </TransitionGroup>
 </template>
 
@@ -153,7 +151,7 @@ const libriFiltrati = computed(() => {
   transition: all 0.4s ease;
 }
 
- /*  Not needed in this case*/
+/*  Not needed in this case*/
 .card-enter-from {
   opacity: 0;
   transform: translateY(30px) scale(0.9);
