@@ -13,8 +13,8 @@ const props = defineProps({
   },
   picture: String, //custom props with computed default
   relatedArray: Array, //generi o libri
-  detailLink: String,
-  preferito: String
+  detailLink: String, // Custom prop
+  preferito: Boolean // Custom prop
 })
 
 // Create a computed property for the cover URL
@@ -33,12 +33,12 @@ const onDelete = () => emit('onDelete', props.id)
 
 const addPreferiti = () => emit('addPreferiti', props.id)
 
-// console.log({item: props.item})
 </script>
 
 <template>
   <div class="container">
     <section class="cover">
+      <span v-if="preferito" class="stella">⭐</span>
       <RouterLink class="link-to-dettaglio" :to="{ name: props.detailLink, params: { id: item.id } }">
         <img :src="picture" :alt="`${item.nome} ${item.cognome}`" class="image" />
       </RouterLink>
@@ -46,9 +46,11 @@ const addPreferiti = () => emit('addPreferiti', props.id)
     </section>
 
     <section class="header">
-      <h3 v-if="item.titolo">{{ item.titolo }} <span v-if="preferito">⭐</span></h3>
+      <h3 v-if="item.titolo">{{ item.titolo }}</h3>
       <p v-if="item.autore_oggetto"><strong>Autore</strong>: {{ item.autore_oggetto.nome }} {{ item.autore_oggetto.cognome }}</p>
-      <h3 v-if="item.cognome">{{ item.nome }} {{ item.cognome }}</h3>
+      <h3 v-if="item.cognome">{{ item.nome }} {{ item.cognome }}
+        
+      </h3>
       <hr />
     </section>
 
@@ -56,7 +58,7 @@ const addPreferiti = () => emit('addPreferiti', props.id)
       <ul class="genere">
         <strong>{{item.categorie ? 'Genere' : 'Libri'}}</strong
         >:
-        <li v-for="oggetto in relatedArray" :key="oggetto.id">{{ oggetto }}</li>
+        <li v-for="oggetto in relatedArray" :key="oggetto.id">{{ oggetto.nome ? oggetto.nome : oggetto.titolo }}</li>
       </ul>
 
       <hr />
@@ -69,7 +71,7 @@ const addPreferiti = () => emit('addPreferiti', props.id)
     </section>
     <section class="anno">
       <span v-if="item.anno_pubblicazione"><strong>pubblicato nel</strong>: {{ item.anno_pubblicazione }}</span
-      ><span v-if="item.anno_pubblicazione" :class="disponibile ? 'green' : 'red'">{{
+      ><span v-if="item.anno_pubblicazione" :class="item.disponibile ? 'green' : 'red'">{{
         item.disponibile ? 'disponibile' : 'non disponibile'
       }}</span>
       <span v-if="item.data_nascita"><strong>Nato nel</strong> {{ item.data_nascita }}</span>
@@ -88,15 +90,7 @@ const addPreferiti = () => emit('addPreferiti', props.id)
   /* border: 1px solid; */
 }
 
-.elimina {
-  position: absolute;
-  left: 20px;
-  bottom: 20px;
-  background-color: red;
-  color: white;
-  padding: 5px;
-  cursor: pointer;
-}
+
 
 hr {
   width: 70%;
@@ -128,6 +122,13 @@ hr {
   scale: 1.01;
 }
 
+.stella {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  font-size: 1.5rem;
+}
+
 .cover {
   grid-row: span 4;
   /* height: 100%; */
@@ -141,6 +142,7 @@ hr {
   font-size: 0.75rem;
   color: #94a3b8;
 }
+
 .image {
   height: 100%;
   width: 100%;
@@ -197,6 +199,16 @@ h3 {
 }
 .red {
   color: red;
+}
+
+.elimina {
+  position: absolute;
+  left: 20px;
+  bottom: 20px;
+  background-color: red;
+  color: white;
+  padding: 5px;
+  cursor: pointer;
 }
 
 .add-preferiti {

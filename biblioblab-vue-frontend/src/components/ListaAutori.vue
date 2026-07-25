@@ -2,6 +2,7 @@
 import CardVue from '@/components/CardVue.vue'
 import { useLibri } from '@/composable/useLibri'
 import { useEliminaItem } from '@/composable/useEliminaItem'
+import { usePreferiti } from '@/composable/usePreferiti.js'
 import { onMounted, ref } from 'vue'
 import ModalVue from './ModalVue.vue'
 import LoadingSpinner from './LoadingSpinner.vue'
@@ -9,6 +10,10 @@ import LoadingSpinner from './LoadingSpinner.vue'
 const { getAutori } = useLibri()
 const autori = ref([])
 const loading = ref(false)
+
+// Use the preferiti composable
+const { arrayPreferiti, togglePreferito } = usePreferiti()
+
 // Use the delete composable
 const {
   showModal,
@@ -57,8 +62,10 @@ onMounted(async () => {
       <CardVue
         :item="autore"
         :picture="autore.foto_url"
-        :related-array="autore.libri_titles"
+        :related-array="autore.libri_objects"
         @on-delete="removeConfirmation(autore.id)"
+        @add-preferiti="togglePreferito(autore.id)"
+        :preferito="arrayPreferiti.has(autore.id)"
         :detail-link="'autore'"
         :class="['libro-card', { 'card-deleting': isDeleting(autore.id) }]"
       />

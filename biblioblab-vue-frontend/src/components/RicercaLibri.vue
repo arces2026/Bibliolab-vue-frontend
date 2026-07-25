@@ -1,12 +1,12 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import LoadingSpinner from './LoadingSpinner.vue'
-import LibroCard from './LibroCard.vue'
 import CustomSelect from './CustomSelect.vue'
 import { useLibri } from '@/composable/useLibri.js'
 import { usePreferiti } from '@/composable/usePreferiti.js'
 import { useEliminaItem } from '@/composable/useEliminaItem.js'
 import ModalVue from './ModalVue.vue'
+import CardVue from './CardVue.vue'
 
 const libri = ref([])
 const text = ref('Tutti')
@@ -128,12 +128,21 @@ const libriFiltrati = computed(() => {
   <h3>{{ libriFiltrati.length }} libri trovati su {{ libri.length }}</h3>
   <TransitionGroup name="card" tag="div" class="parent">
     <div class="parent" v-for="libro in libriFiltrati" :key="libro.id">
-      <LibroCard
+      <!-- <LibroCard
         v-bind="libro"
         @add-preferiti="togglePreferito"
         @on-delete="removeConfirmation"
         :preferito="arrayPreferiti.has(libro.id)"
         :class="['libro-card', { 'card-deleting': isDeleting(libro.id) }]"
+      /> -->
+      <CardVue
+      :item="libro"
+      :picture="libro.cover_url"
+      :related-array="libro.categorie"
+      @add-preferiti="togglePreferito(libro.id)"
+      @on-delete="removeConfirmation"
+      :preferito="arrayPreferiti.has(libro.id)"
+      :class="['libro-card', { 'card-deleting': isDeleting(libro.id) }]"
       />
     </div>
   </TransitionGroup>
