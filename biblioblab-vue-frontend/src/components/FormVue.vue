@@ -1,20 +1,32 @@
 <script setup>
 import { computed, reactive, ref, onMounted } from 'vue'
 import { useLibri } from '@/composable/useLibri'
-import { useCreaItem } from '@/composable/useCreaItem.js'
+// import { useApi} from '@/composable/useApi.js'
 import LoadingSpinner from './LoadingSpinner.vue'
 import { useRoute } from 'vue-router'
+import { errorMessages } from 'vue/compiler-sfc'
 
-const { newItem } = useCreaItem()
+// const { createItem } = useApi()
 const { getAutori, getCategorie, getLibro, updateLibro } = useLibri()
-// const { getAutori, getCategorie, getLibro, newLibro, updateLibro } = useLibri()
-const route = useRoute()
+const error = ref(null)
 const success = ref(null)
-const error = ref('')
+const route = useRoute()
 const loading = ref(false)
+
 
 const autori = ref([])
 const categ = ref([])
+
+const props = defineProps({
+  idLibro: {
+    type: [Number, String],
+    default: null,
+  },
+  isEdit: {
+    type: Boolean,
+    default: false,
+  },
+})
 
 // Value are given to this reactive const if we are modifying a libro
 const libro = reactive({
@@ -68,16 +80,7 @@ onMounted(async () => {
   }
 })
 
-const props = defineProps({
-  idLibro: {
-    type: [Number, String],
-    default: null,
-  },
-  isEdit: {
-    type: Boolean,
-    default: false,
-  },
-})
+
 
 const formValido = computed(() => libro.titolo.trim() !== '')
 
@@ -85,17 +88,17 @@ const formValido = computed(() => libro.titolo.trim() !== '')
 
 const salva = async () => {
   try {
-    let result
+    let data
 
     if (props.isEdit && props.idLibro) {
       // Update existing book
-      result = await updateLibro(`/api/v1/libri/${props.idLibro}`, libro)
-      emit('updated', result)
+      data = await updateLibro(`/api/v1/libri/${props.idLibro}`, libro)
+      emit('updated', data)
       // success.value = `Libro "${libro.titolo}" aggiornato correttamente`
     } else {
       // Create new book
-      result = await newItem(`/api/v1/autori/`, autore)
-      emit('saved', result)
+      // result = await createItem(`/api/v1/autori/`, autore)
+      emit('saved', autore)
       // success.value = `Libro "${libro.titolo}" salvato correttamente. Reindirizzamento...`
 
       // Reset form for new book (optional)
@@ -112,7 +115,7 @@ const salva = async () => {
       //   })
       // }
 
-      success.value = 'Item creato con successo.'
+      // success.value = 'Item creato con successo.'
     }
     
   } catch (err) {
@@ -172,8 +175,6 @@ const emit = defineEmits(['saved', 'updated'])
     <textarea v-model="autore.biografia" type="text" id="biografia" autocomplete="name" placeholder="biografia..." ></textarea>
     <button>Salva</button>
   </form>
-  <p v-if="success" class="para success">{{ success }}</p>
-  <p v-else class="para error">{{ error }}</p>
 </template>
 
 <style scoped>
@@ -230,16 +231,5 @@ button:disabled {
   cursor: not-allowed;
 }
 
-.para {
-  font-size: 1.5rem;
-  text-align: center;
-}
 
-.para.success {
-  color: green;
-}
-
-.para.error {
-  color: red;
-}
 </style>
