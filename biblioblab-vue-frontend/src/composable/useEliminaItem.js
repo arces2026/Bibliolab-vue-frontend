@@ -41,6 +41,10 @@ export function useEliminaItem(items, options = {}) {
   }
 
   const removeConfirmation = (id) => {
+    if (!id) {
+      console.error('Missing ID for deletion')
+      return
+    }
     itemDaRimuovere.value = id
     console.log({ itemDaRimuovere: itemDaRimuovere.value })
     showModal.value = true

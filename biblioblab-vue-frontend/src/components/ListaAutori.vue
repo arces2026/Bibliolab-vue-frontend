@@ -3,11 +3,13 @@ import CardVue from '@/components/CardVue.vue'
 import { useLibri } from '@/composable/useLibri'
 import { useEliminaItem } from '@/composable/useEliminaItem'
 import { usePreferiti } from '@/composable/usePreferiti.js'
+import { useApi } from '@/composable/useApi.js'
 import { onMounted, ref } from 'vue'
 import ModalVue from './ModalVue.vue'
 import LoadingSpinner from './LoadingSpinner.vue'
 
 const { getAutori } = useLibri()
+const { getItems } = useApi()
 const autori = ref([])
 const loading = ref(false)
 const success = ref('Sicuro di voler eliminare l\'autore?')
@@ -32,7 +34,8 @@ const {
 
 onMounted(async () => {
   try {
-    autori.value = await getAutori('/api/v1/autori/')
+    autori.value = await getItems('/api/v1/autori/')
+    // autori.value = await getAutori('/api/v1/autori/')
     console.log({ autori: autori.value })
   } catch (err) {
     console.error('Errore recuperando gli autori', err.message)

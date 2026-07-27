@@ -29,7 +29,7 @@ const handleCreaAutore = async(autore) => {
 <template>
   <h1>Inserisci Autore</h1>
   <LoadingSpinner v-if="loading"/>
-  <FormVue @saved="handleCreaAutore" />
+  <FormVue @crea-autore="handleCreaAutore" />
   <p v-if="success" class="para success">{{ success }}</p>
   <p v-else class="para error">{{ error }}</p>
 </template>
