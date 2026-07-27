@@ -1,141 +1,228 @@
 diff --git a/biblioblab-vue-frontend/src/components/FormVue.vue b/biblioblab-vue-frontend/src/components/FormVue.vue
-index 6ed1dfd..b79a8e7 100644
+index c5e771a..27ae76b 100644
 --- a/biblioblab-vue-frontend/src/components/FormVue.vue
 +++ b/biblioblab-vue-frontend/src/components/FormVue.vue
-@@ -1,21 +1,33 @@
- <script setup>
- import { computed, reactive, ref, onMounted } from 'vue'
- import { useLibri } from '@/composable/useLibri'
--import { useCreaItem } from '@/composable/useCreaItem.js'
-+// import { useApi} from '@/composable/useApi.js'
- import LoadingSpinner from './LoadingSpinner.vue'
- import { useRoute } from 'vue-router'
-+import { errorMessages } from 'vue/compiler-sfc'
- 
--const { newItem } = useCreaItem()
-+// const { createItem } = useApi()
- const { getAutori, getCategorie, getLibro, updateLibro } = useLibri()
--// const { getAutori, getCategorie, getLibro, newLibro, updateLibro } = useLibri()
--const route = useRoute()
-+const error = ref(null)
- const success = ref(null)
--const error = ref('')
-+const route = useRoute()
- const loading = ref(false)
- 
-+
- const autori = ref([])
- const categ = ref([])
- 
-+const props = defineProps({
-+  idLibro: {
-+    type: [Number, String],
-+    default: null,
-+  },
-+  isEdit: {
-+    type: Boolean,
-+    default: false,
-+  },
-+})
-+
- // Value are given to this reactive const if we are modifying a libro
- const libro = reactive({
-   titolo: '',
-@@ -68,16 +80,7 @@ onMounted(async () => {
-   }
- })
- 
--const props = defineProps({
--  idLibro: {
--    type: [Number, String],
--    default: null,
--  },
--  isEdit: {
--    type: Boolean,
--    default: false,
--  },
--})
-+
- 
- const formValido = computed(() => libro.titolo.trim() !== '')
- 
-@@ -85,17 +88,17 @@ const formValido = computed(() => libro.titolo.trim() !== '')
+@@ -99,26 +99,28 @@ const formAutoreValido = computed(() => autore.cognome.trim() !== '')
  
  const salva = async () => {
    try {
--    let result
-+    let data
+-    let data
++    // let data
  
-     if (props.isEdit && props.idLibro) {
-       // Update existing book
--      result = await updateLibro(`/api/v1/libri/${props.idLibro}`, libro)
--      emit('updated', result)
-+      data = await updateLibro(`/api/v1/libri/${props.idLibro}`, libro)
-+      emit('updated', data)
-       // success.value = `Libro "${libro.titolo}" aggiornato correttamente`
+-    // const url = props.idLibro
+-    const url =
+-      route.path === `/inserisci-libro/${props.idLibro}`
+-        ? `/api/v1/libri/${props.idLibro}`
+-        : `/api/v1/autori/${props.idAutore}`
++    // // const url = props.idLibro
++    // const url =
++    //   route.path === `/inserisci-libro/${props.idLibro}`
++    //     ? `/api/v1/libri/${props.idLibro}`
++    //     : `/api/v1/autori/${props.idAutore}`
+ 
+-    const payload = route.path === `/inserisci-libro/${props.idLibro}` ? libro : autore
++    // const payload = route.path === `/inserisci-libro/${props.idLibro}` ? libro : autore
+ 
+     if (props.isEdit) {
+-      // Update existing book
+-      data = await updateLibro(url, payload)
+-      emit('updated', data)
++      // Update existing book or author
++      if (route.path === `/modifica-libro/${props.idLibro}`) {
++        // data = await updateLibro(url, payload)
++        emit('patchLibro', libro)
++      } else {
++        emit('patchAutore', autore)
++      }
      } else {
-       // Create new book
--      result = await newItem(`/api/v1/autori/`, autore)
--      emit('saved', result)
-+      // result = await createItem(`/api/v1/autori/`, autore)
-+      emit('saved', autore)
-       // success.value = `Libro "${libro.titolo}" salvato correttamente. Reindirizzamento...`
- 
+       if (route.path === '/inserisci-libro') {
+-        console.log('creaLibro called')
+         emit('creaLibro', libro)
+       } else {
+-        console.log('crea-autore called')
+         emit('creaAutore', autore)
+       }
        // Reset form for new book (optional)
-@@ -112,7 +115,7 @@ const salva = async () => {
-       //   })
-       // }
+@@ -141,87 +143,95 @@ const salva = async () => {
+   }
+ }
  
--      success.value = 'Item creato con successo.'
-+      // success.value = 'Item creato con successo.'
-     }
-     
-   } catch (err) {
-@@ -172,8 +175,6 @@ const emit = defineEmits(['saved', 'updated'])
-     <textarea v-model="autore.biografia" type="text" id="biografia" autocomplete="name" placeholder="biografia..." ></textarea>
-     <button>Salva</button>
-   </form>
--  <p v-if="success" class="para success">{{ success }}</p>
--  <p v-else class="para error">{{ error }}</p>
+-const emit = defineEmits(['creaLibro', 'creaAutore', 'updated'])
++const emit = defineEmits(['creaLibro', 'creaAutore', 'patchLibro', 'patchAutore'])
+ </script>
+ 
+ <template>
+-  <form
+-    v-if="route.path === '/inserisci-libro' || route.path === `/modifica-libro/${idLibro}`"
+-    @submit.prevent="salva"
+-    class="form"
+-  >
+-    <LoadingSpinner v-if="loading" />
+-    <label for="titolo">Titolo</label>
+-    <input id="titolo" type="text" v-model="libro.titolo" placeholder="titolo" required />
++  <div>
++    <form
++      v-if="route.path === '/inserisci-libro' || route.path === `/modifica-libro/${idLibro}`"
++      @submit.prevent="salva"
++      class="form"
++    >
++      <LoadingSpinner v-if="loading" />
++      <label for="titolo">Titolo</label>
++      <input id="titolo" type="text" v-model="libro.titolo" placeholder="titolo" required />
+ 
+-    <label for="autore">Seleziona l'autore</label>
+-    <select id="autore" v-model="libro.autore">
+-      <option disabled value="">Scegli autore...</option>
+-      <option v-for="autore in autori" :key="autore.id" :value="autore.id">
+-        {{ autore.cognome }} {{ autore.nome }}
+-      </option>
+-    </select>
++      <label for="autore">Seleziona l'autore</label>
++      <select id="autore" v-model="libro.autore">
++        <option disabled value="">Scegli autore...</option>
++        <option v-for="autore in autori" :key="autore.id" :value="autore.id">
++          {{ autore.cognome }} {{ autore.nome }}
++        </option>
++      </select>
+ 
+-    <label for="isbn">ISBN</label>
+-    <input id="isbn" type="text" v-model="libro.isbn" placeholder="isbn" />
++      <label for="isbn">ISBN</label>
++      <input id="isbn" type="text" v-model="libro.isbn" placeholder="isbn" />
+ 
+-    <label for="data">Anno di pubblicazione</label>
+-    <input id="data" type="number" v-model="libro.anno_pubblicazione" placeholder="anno" />
++      <label for="data">Anno di pubblicazione</label>
++      <input id="data" type="number" v-model="libro.anno_pubblicazione" placeholder="anno" />
+ 
+-    <label for="categoria">Seleziona il genere</label>
+-    <select id="categoria" v-model="libro.categorie">
+-      <option disabled value="">Seleziona categoria</option>
+-      <option v-for="categoria in categ" :key="categoria.id" :value="categoria">
+-        {{ categoria.nome }}
+-      </option>
+-    </select>
++      <label for="categoria">Seleziona il genere</label>
++      <select id="categoria" v-model="libro.categorie">
++        <option disabled value="">Seleziona categoria</option>
++        <option v-for="categoria in categ" :key="categoria.id" :value="categoria">
++          {{ categoria.nome }}
++        </option>
++      </select>
+ 
+-    <label for="disponibile">Disponibile</label>
+-    <input type="checkbox" v-model="libro.disponibile" id="disponibile" />
++      <label for="disponibile">Disponibile</label>
++      <input type="checkbox" v-model="libro.disponibile" id="disponibile" />
+ 
+-    <label for="url">URL cover</label>
+-    <input id="url" type="url" v-model="libro.cover_url" placeholder="Inserisci URL cover..." />
++      <label for="url">URL cover</label>
++      <input id="url" type="url" v-model="libro.cover_url" placeholder="Inserisci URL cover..." />
+ 
+-    <label for="descrizione">Descrizione</label>
+-    <textarea
+-      id="descrizione"
+-      v-model="libro.descrizione"
+-      placeholder="Il libro narra di..."
+-    ></textarea>
+-    <button :disabled="!formLibroValido || loading">{{ isEdit ? 'Aggiorna' : 'Salva' }}</button>
+-    <p v-if="success" class="para success">{{ success }}</p>
+-    <p v-else class="para error">{{ error }}</p>
+-  </form>
++      <label for="descrizione">Descrizione</label>
++      <textarea
++        id="descrizione"
++        v-model="libro.descrizione"
++        placeholder="Il libro narra di..."
++      ></textarea>
++      <button :disabled="!formLibroValido || loading">{{ isEdit ? 'Aggiorna' : 'Salva' }}</button>
++      <p v-if="success" class="para success">{{ success }}</p>
++      <p v-else class="para error">{{ error }}</p>
++    </form>
+ 
+-  <form v-else @submit.prevent="salva" class="form">
+-    <label for="nome">Nome</label>
+-    <input v-model="autore.nome" type="text" id="nome" autocomplete="name" placeholder="nome..." />
+-    <label for="cognome">Cognome</label>
+-    <input
+-      v-model="autore.cognome"
+-      type="text"
+-      id="cognome"
+-      autocomplete="family-name"
+-      placeholder="nome..."
+-    />
+-    <label for="data-nascita">Data di nascita</label>
+-    <input
+-      v-model="autore.data_nascita"
+-      type="date"
+-      id="data-nascita"
+-      autocomplete="bday-day"
+-      placeholder="data di nascita..."
+-    />
+-    <label for="biografia">Biografia</label>
+-    <textarea
+-      v-model="autore.biografia"
+-      type="text"
+-      id="biografia"
+-      autocomplete="name"
+-      placeholder="biografia..."
+-    ></textarea>
+-    <button :disabled="!formAutoreValido || loading">{{ isEdit ? 'Aggiorna' : 'Salva' }}</button>
+-  </form>
++    <form v-else @submit.prevent="salva" class="form">
++      <label for="nome">Nome</label>
++      <input
++        v-model="autore.nome"
++        type="text"
++        id="nome"
++        autocomplete="name"
++        placeholder="nome..."
++      />
++      <label for="cognome">Cognome</label>
++      <input
++        v-model="autore.cognome"
++        type="text"
++        id="cognome"
++        autocomplete="family-name"
++        placeholder="nome..."
++      />
++      <label for="data-nascita">Data di nascita</label>
++      <input
++        v-model="autore.data_nascita"
++        type="date"
++        id="data-nascita"
++        autocomplete="bday-day"
++        placeholder="data di nascita..."
++      />
++      <label for="biografia">Biografia</label>
++      <textarea
++        v-model="autore.biografia"
++        type="text"
++        id="biografia"
++        autocomplete="name"
++        placeholder="biografia..."
++      ></textarea>
++      <button :disabled="!formAutoreValido || loading">{{ isEdit ? 'Aggiorna' : 'Salva' }}</button>
++    </form>
++  </div>
  </template>
  
  <style scoped>
-@@ -230,16 +231,5 @@ button:disabled {
-   cursor: not-allowed;
- }
- 
--.para {
--  font-size: 1.5rem;
--  text-align: center;
--}
- 
--.para.success {
--  color: green;
--}
--
--.para.error {
--  color: red;
--}
- </style>
 diff --git a/biblioblab-vue-frontend/src/composable/useApi.js b/biblioblab-vue-frontend/src/composable/useApi.js
-new file mode 100644
-index 0000000..fe7fda0
---- /dev/null
+index a052bd0..18bf671 100644
+--- a/biblioblab-vue-frontend/src/composable/useApi.js
 +++ b/biblioblab-vue-frontend/src/composable/useApi.js
-@@ -0,0 +1,35 @@
-+import { ref } from 'vue'
-+import { useAuthStore } from '@/stores/authStore'
-+
-+export function useApi() {
-+  const { getCsrf } = useAuthStore()
-+  const loading = ref(false)
-+
-+  const createItem = async (url, data) => {
+@@ -58,7 +58,31 @@ export function useApi() {
+     }
+   }
+ 
++  const patchUpdateItem = async (url, data) => {
 +    loading.value = true
 +
 +    try {
 +      const res = await fetch(url, {
-+        method: 'POST',
++        method: 'PATCH',
 +        headers: {
 +          'Content-Type': 'application/json',
 +          'X-CSRFToken': getCsrf(),
@@ -146,83 +233,135 @@ index 0000000..fe7fda0
 +      if (!res.ok) {
 +        throw new Error(`HTTP ${res.status}: ${res.statusText}`)
 +      }
-+      
++
 +      return await res.json()
 +    } finally {
 +      loading.value = false
 +    }
 +  }
 +
-+  return {
-+    createItem,
-+    loading,
-+  }
-+}
-diff --git a/biblioblab-vue-frontend/src/views/InserisciAutoreView.vue b/biblioblab-vue-frontend/src/views/InserisciAutoreView.vue
-index 7f61269..4c83f71 100644
---- a/biblioblab-vue-frontend/src/views/InserisciAutoreView.vue
-+++ b/biblioblab-vue-frontend/src/views/InserisciAutoreView.vue
-@@ -1,24 +1,54 @@
+   return {
++    patchUpdateItem,
+     createItem,
+     getItems,
+     loading,
+diff --git a/biblioblab-vue-frontend/src/views/ModificaAutoreView.vue b/biblioblab-vue-frontend/src/views/ModificaAutoreView.vue
+index 0d9bb40..4cc6c13 100644
+--- a/biblioblab-vue-frontend/src/views/ModificaAutoreView.vue
++++ b/biblioblab-vue-frontend/src/views/ModificaAutoreView.vue
+@@ -1,10 +1,11 @@
  <script setup>
 -import FormVue from '@/components/FormVue.vue';
--import { useCreaItem } from '@/composable/useCreaItem';
+-import ModalVue from '@/components/ModalVue.vue';
+-import { ref, onMounted} from 'vue'
 +import FormVue from '@/components/FormVue.vue'
-+import LoadingSpinner from '@/components/LoadingSpinner.vue'
++import ModalVue from '@/components/ModalVue.vue'
++import { ref, onMounted } from 'vue'
+ import { useRoute, useRouter } from 'vue-router'
 +import { useApi } from '@/composable/useApi'
- import { ref } from 'vue'
  
-+const { createItem, loading } = useApi()
-+const arrayAutori = ref([]) // On createItem, in useApi, itemsArray is a ref as well, because arrayAutori is !!!
-+const success = ref(null)
+-
++const { patchUpdateItem } = useApi()
+ const route = useRoute()
+ const router = useRouter()
+ const id = ref(null)
+@@ -13,17 +14,25 @@ const button1Text = ref('Visualizza')
+ const button2Text = ref('Esci')
+ const success = ref(null)
+ const autore = ref({})
+-
 +const error = ref(null)
  
--const { newItem } = useCreaItem()
--const itemData = ref({})
-+const handleCreaAutore = async(autore) => {
-+  success.value = null
-+  error.value = null
+ onMounted(() => {
+   id.value = route.params.id
+ })
  
--const postItem = async() => {
--  await newItem('/api/v1/autori/', itemData)
+-const handleUpdated = () => {
+-  showModal.value = true
+-  button1Text.value = 'Visualizza'
+-  button2Text.value = 'Esci'
+-  success.value = `L'autore ${autore.value.cognome} è stato aggiornato con successo`
++const handlePatch = async (data) => {
++  error.value = null
 +  try {
-+    
-+    const nuovoAutore = await createItem('/api/v1/autori/', autore)
-+    arrayAutori.value.push(nuovoAutore)
-+  
-+    success.value = `L'autore ${autore.cognome} è stato creato con successo`
++    autore.value = await patchUpdateItem(`/api/v1/autori/${id.value}`, data)
++    console.log({autore: autore.value})
++    showModal.value = true
++    button1Text.value = 'Visualizza'
++    button2Text.value = 'Esci'
++    success.value = `L'autore ${autore.value.cognome} è stato aggiornato con successo`
 +  } catch (err) {
-+    console.error('Errore creazione autore',err.message)
-+    error.value = 'Errore nella creazione del nuovo autore'
++    console.error('HTTP', err.message)
++    error.value = "Errore tentando di modificare l'autore"
 +  }
  }
- </script>
  
- <template>
-   <h1>Inserisci Autore</h1>
--  <FormVue />
-+  <LoadingSpinner v-if="loading"/>
-+  <FormVue @saved="handleCreaAutore" />
-+  <p v-if="success" class="para success">{{ success }}</p>
-+  <p v-else class="para error">{{ error }}</p>
- </template>
- 
- <style scoped>
- h1 {
-   text-align: center;
- }
--</style>
+ const onNext = () => router.push(`/autori/${id.value}`)
+@@ -41,9 +50,5 @@ const onExit = () => router.push(`/autori`)
+     :button2="button2Text"
+   />
+   <h1>Modifica autore</h1>
+-  <FormVue 
+-    :id-autore="id"
+-    :is-edit="true"
+-    @updated="handleUpdated"
+-  />
+-</template>
 \ No newline at end of file
-+
-+.para {
-+  font-size: 1.5rem;
-+  text-align: center;
-+}
-+
-+.para.success {
-+  color: green;
-+}
-+
-+.para.error {
-+  color: red;
-+}
-+</style>
++  <FormVue :id-autore="id" :is-edit="true" @patch-autore="handlePatch" />
++</template>
+diff --git a/biblioblab-vue-frontend/src/views/ModificaLibroView.vue b/biblioblab-vue-frontend/src/views/ModificaLibroView.vue
+index 73c31e8..6d420d1 100644
+--- a/biblioblab-vue-frontend/src/views/ModificaLibroView.vue
++++ b/biblioblab-vue-frontend/src/views/ModificaLibroView.vue
+@@ -1,15 +1,18 @@
+ <script setup>
+-import LibroForm from '@/components/LibroForm.vue'
+ import ModalVue from '@/components/ModalVue.vue'
+ import { onMounted, ref } from 'vue'
+ import { useRoute, useRouter } from 'vue-router'
++import { useApi } from '@/composable/useApi'
++import FormVue from '@/components/FormVue.vue'
+ 
++const { patchUpdateItem } = useApi()
+ const route = useRoute()
+ const router = useRouter()
+ const libro = ref({})
+ const showModal = ref(false)
+ const id = ref(null)
+ const success = ref(null)
++const error = ref(null)
+ const button1Text = ref('')
+ const button2Text = ref('')
+ 
+@@ -17,11 +20,18 @@ onMounted(async () => {
+   id.value = route.params.id
+ })
+ 
+-const handleUpdated = () => {
+-  showModal.value = true
+-  button1Text.value = 'Visualizza'
+-  button2Text.value = 'Esci'
+-  success.value = `Il libro ${libro.value.titolo} è stato aggiornato con successo`
++const handlePatch = async (data) => {
++  console.log('handlePatch fired')
++  try {
++    libro.value = await patchUpdateItem(`/api/v1/libri/${id.value}`, data)
++    showModal.value = true
++    button1Text.value = 'Visualizza'
++    button2Text.value = 'Esci'
++    success.value = `Il libro ${libro.value.titolo} è stato aggiornato con successo`
++  } catch (err) {
++    console.error('HTTP', err.message)
++    error.value = `Errore durante la modifica del libro ${libro.value.titolo}`
++  }
+ }
+ 
+ const onNext = () => router.push(`/libri/${id.value}`)
+@@ -39,5 +49,5 @@ const onExit = () => router.push(`/libri`)
+     :button2="button2Text"
+   />
+   <h1>Modifica libro</h1>
+-  <LibroForm :id-libro="id" :is-edit="true" @updated="handleUpdated" />
++  <FormVue :id-libro="id" :is-edit="true" @patch-libro="handlePatch" />
+ </template>

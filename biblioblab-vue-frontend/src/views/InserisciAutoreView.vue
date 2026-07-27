@@ -5,22 +5,19 @@ import { useApi } from '@/composable/useApi'
 import { ref } from 'vue'
 
 const { createItem, loading } = useApi()
-const arrayAutori = ref([]) // On createItem, in useApi, itemsArray is a ref as well, because arrayAutori is !!!
 const success = ref(null)
 const error = ref(null)
 
-const handleCreaAutore = async(autore) => {
+const handleCreaAutore = async (autore) => {
   success.value = null
   error.value = null
 
   try {
-    
-    const nuovoAutore = await createItem('/api/v1/autori/', autore)
-    arrayAutori.value.push(nuovoAutore)
-  
+    await createItem('/api/v1/autori/', autore)
+
     success.value = `L'autore ${autore.cognome} è stato creato con successo`
   } catch (err) {
-    console.error('Errore creazione autore',err.message)
+    console.error('Errore creazione autore', err.message)
     error.value = 'Errore nella creazione del nuovo autore'
   }
 }
@@ -28,7 +25,7 @@ const handleCreaAutore = async(autore) => {
 
 <template>
   <h1>Inserisci Autore</h1>
-  <LoadingSpinner v-if="loading"/>
+  <LoadingSpinner v-if="loading" />
   <FormVue @crea-autore="handleCreaAutore" />
   <p v-if="success" class="para success">{{ success }}</p>
   <p v-else class="para error">{{ error }}</p>

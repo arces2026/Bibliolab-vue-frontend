@@ -58,7 +58,31 @@ export function useApi() {
     }
   }
 
+  const patchUpdateItem = async (url, data) => {
+    loading.value = true
+
+    try {
+      const res = await fetch(url, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCsrf(),
+        },
+        body: JSON.stringify(data),
+      })
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`)
+      }
+
+      return await res.json()
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
+    patchUpdateItem,
     createItem,
     getItems,
     loading,
