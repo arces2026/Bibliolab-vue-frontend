@@ -1,21 +1,21 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { useLibri } from '@/composable/useLibri'
+import { useApi } from '@/composable/useApi'
 import { useAuthStore } from '@/stores/authStore'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 
 const route = useRoute()
 const authStore = useAuthStore()
 const libro = ref({})
-const { getLibro} = useLibri()
+const { getItems } = useApi()
 const id = ref(null)
 const loading = ref(false)
 
 onMounted(async () => {
   const id = route.params.id //get id from route parameters
   loading.value = true
-  libro.value = await getLibro(`/api/v1/libri/${id}`)
+  libro.value = await getItems(`/api/v1/libri/${id}`)
   loading.value = false
 })
 </script>

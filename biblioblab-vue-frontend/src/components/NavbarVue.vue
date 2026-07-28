@@ -3,6 +3,7 @@ import { RouterLink } from 'vue-router';
 import { useAuthStore } from '@/stores/authStore';
 
 const authStore = useAuthStore()
+console.log({utente: authStore.utente, isAuthenticated: authStore.isAuthenticated})
 </script>
 
 <template>
@@ -13,7 +14,7 @@ const authStore = useAuthStore()
       <RouterLink :to="{name: 'ricerca'}" class="navbar-link">Ricerca Libri</RouterLink>
       <RouterLink  v-if="authStore.utente && authStore.isStaff" :to="{name: 'inserisci-autore'}" class="navbar-link">Inserisci autore</RouterLink>
       <RouterLink :to="{name: 'autori'}" class="navbar-link">Autori</RouterLink>
-      <p>My profile</p>
+      <RouterLink v-if="authStore.isAuthenticated" class="navbar-link" :to="{name: 'profilo'}">Profilo</RouterLink>
       <RouterLink :to="{name: 'login'}" v-if="!authStore.isLogged" class="navbar-link">Login</RouterLink>
       <RouterLink :to="{name: 'register'}" v-if="!authStore.isLogged" class="navbar-link">Registrati</RouterLink>
       <RouterLink :to="{name: 'login'}" @click="authStore.logout" v-if="authStore.isLogged" class="navbar-link">Logout</RouterLink>

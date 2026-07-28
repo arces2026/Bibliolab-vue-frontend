@@ -68,6 +68,12 @@ const routes = [
     component: () => import('@/views/RegisterView.vue'),
     meta: { titoloPagina: 'Register' },
   },
+  {
+    path: '/profilo',
+    name: 'profilo',
+    component: () => import('@/views/ProfileView.vue'),
+    meta: { titoloPagina: 'Profilo'}
+  }
 ]
 
 const router = createRouter({

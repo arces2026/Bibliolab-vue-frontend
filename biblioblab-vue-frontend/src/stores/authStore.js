@@ -18,6 +18,7 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = true
     error.value = null
     success.value = null
+    isAuthenticated.value = false
 
     try {
       // console.log('📝 Registering with data:', userData)
@@ -53,6 +54,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function login(username, password) {
+    isAuthenticated.value = false
     try {
       //1. Ottieni CSRF token
       // const csrfRes = await fetch('/api/auth/csrf/', { credentials: 'include' })
@@ -76,8 +78,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       utente.value = await res.json()
       isAuthenticated.value = true
-      //  const redirect = route.query.redirect || '/libri'
-      //  router.push(redirect)
+      console.log({isAuthenticated: isAuthenticated.value})
 
     } catch (err) {
       console.error('Error trying to login:', err)

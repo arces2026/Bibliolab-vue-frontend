@@ -2,7 +2,7 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import LoadingSpinner from './LoadingSpinner.vue'
 import CustomSelect from './CustomSelect.vue'
-import { useLibri } from '@/composable/useLibri.js'
+import { useApi } from '@/composable/useApi.js'
 import { usePreferiti } from '@/composable/usePreferiti.js'
 import { useEliminaItem } from '@/composable/useEliminaItem.js'
 import ModalVue from './ModalVue.vue'
@@ -15,9 +15,8 @@ const filtro = ref('')
 const genereSelezionato = ref('Tutti')
 const soloDisponibili = ref(false)
 const loading = ref(false)
-const success = ref('Sicuro di voler eliminare il libro?')
 
-const { getLibri, getCategorie } = useLibri()
+const { getItems } = useApi()
 
 // Use the preferiti composable
 const { arrayPreferiti, togglePreferito } = usePreferiti()
@@ -38,8 +37,8 @@ const {
 const fetchData = async () => {
   try {
     const [libriData, generiData] = await Promise.all([
-      getLibri('/api/v1/libri/'),
-      getCategorie('/api/v1/categorie/'),
+      getItems('/api/v1/libri/'),
+      getItems('/api/v1/categorie/'),
     ])
     libri.value = libriData
     generi.value = generiData
@@ -66,7 +65,7 @@ watch(filtro, (newFiltro, oldFiltro) => {
 
   timeout = setTimeout(async () => {
     try {
-      libri.value = await getLibri('/api/v1/libri/')
+      libri.value = await getItems('/api/v1/libri/')
     } catch (err) {
       console.error('Error while fetching libri', err)
     } finally {
@@ -87,7 +86,6 @@ const libriFiltrati = computed(() => {
   if (soloDisponibili.value === true) {
     result = libri.value.filter((l) => l.disponibile)
   }
-  console.log({ disponibili: soloDisponibili.value })
   if (genereSelezionato.value !== 'Tutti') {
     result = result.filter((l) => l.categorie.some((cat) => cat.nome === genereSelezionato.value))
   }
@@ -131,13 +129,6 @@ const libriFiltrati = computed(() => {
   <h3>{{ libriFiltrati.length }} libri trovati su {{ libri.length }}</h3>
   <TransitionGroup name="card" tag="div" class="parent">
     <div class="parent" v-for="libro in libriFiltrati" :key="libro.id">
-      <!-- <LibroCard
-        v-bind="libro"
-        @add-preferiti="togglePreferito"
-        @on-delete="removeConfirmation"
-        :preferito="arrayPreferiti.has(libro.id)"
-        :class="['libro-card', { 'card-deleting': isDeleting(libro.id) }]"
-      /> -->
       <CardVue
       :item="libro"
       :picture="libro.cover_url"
@@ -159,12 +150,11 @@ const libriFiltrati = computed(() => {
   padding: 0;
 }
 
-.card-enter-active, /*Not used, it's for added cards */
+.card-enter-active, 
 .card-leave-active {
   transition: all 0.4s ease;
 }
 
-/*  Not needed in this case*/
 .card-enter-from {
   opacity: 0;
   transform: translateY(30px) scale(0.9);
@@ -231,16 +221,11 @@ select {
 
 .parent {
   display: grid;
-  /* grid-template-columns: repeat(6, 1fr); */
-  /* Automatically fits as many cards as possible, minimum width 280px */
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  /* grid-template-rows: repeat(4, 1fr); */
   gap: 32px;
 }
 
 .libro-card {
-  /* grid-column: span 2 / span 2;
-  grid-row: span 4 / span 4; */
   /* Remove explicit grid spans so they naturally flow into the auto columns */
   grid-column: auto;
   grid-row: auto;
