@@ -11,46 +11,55 @@ const utente = ref({})
 const arrayPreferiti = ref([])
 const libri = ref([])
 const libriPreferiti = ref([])
-
+const date = ref(null)
+const formattedDate = ref(null)
 
 onMounted(async () => {
   utente.value = await caricaUtente()
- 
+
   const preferitiString = localStorage.getItem('preferiti')
   arrayPreferiti.value = preferitiString ? JSON.parse(preferitiString) : []
 
   libri.value = await getItems('/api/v1/libri/')
-  console.log({libri: libri.value})
+  console.log({ libri: libri.value })
 
-  libriPreferiti.value = libri.value.filter(libro => arrayPreferiti.value.includes(libro.id))
-  console.log({libriPreferiti : libriPreferiti.value})
+  libriPreferiti.value = libri.value.filter((libro) => arrayPreferiti.value.includes(libro.id))
+  console.log({ libriPreferiti: libriPreferiti.value })
+
+  if (!utente.value.iscritto_dal) return 
+  
+  date.value = new Date(utente.value.iscritto_dal)
+  console.log({ date: date.value })
+
+  const options = {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }
+  formattedDate.value = date.value.toLocaleDateString('it-IT', options)
+
 })
-
-const date = new Date(utente.value.iscritto_dal)
-console.log({date: date})
-
-const options = {
-  year: 'numeric',
-  month: 'long',
-  day: 'numeric'
-}
-const formattedDate = date.toLocaleDateString('it-IT', options)
 </script>
 
 <template>
   <h1>Profile</h1>
   <div class="container">
     <div class="utente">
-    <p>Utente: {{ utente.nome }} {{ utente.cognome }}</p>
-    <p>Admin: {{ utente.is_superuser ? 'Sì' : 'No' }}</p>
-    <p>Staff: {{ utente.is_staff ? 'Sì' : 'No' }}</p>
-    <p>Email: {{ utente.email }}</p>
-    <p>Username: {{ utente.username }}</p>
-    <p>Iscritto dal: {{ formattedDate }}</p>
+      <p>Utente: {{ utente.nome }} {{ utente.cognome }}</p>
+      <p>Admin: {{ utente.is_superuser ? 'Sì' : 'No' }}</p>
+      <p>Staff: {{ utente.is_staff ? 'Sì' : 'No' }}</p>
+      <p>Email: {{ utente.email }}</p>
+      <p>Username: {{ utente.username }}</p>
+      <p>Iscritto dal: {{ formattedDate }}</p>
     </div>
     <div class="preferiti">
-      <ul>Libri preferiti
-        <li v-for="libro in libriPreferiti" :key="libro.id"><RouterLink :to="{name : 'libro', params: {id : libro.id}}">{{ libro.titolo }}</RouterLink></li>
+      <ul>
+        Libri preferiti
+        <li v-for="libro in libriPreferiti" :key="libro.id">
+          <RouterLink :to="{ name: 'libro', params: { id: libro.id } }">{{
+            libro.titolo
+          }}</RouterLink>
+        </li>
       </ul>
     </div>
   </div>
