@@ -1,24 +1,25 @@
 <script setup>
 import { computed, reactive, ref, onMounted } from 'vue'
-import { useLibri } from '@/composable/useLibri'
-// import { useApi} from '@/composable/useApi.js'
+import { useApi } from '@/composable/useApi.js'
 import LoadingSpinner from './LoadingSpinner.vue'
 import { useRoute } from 'vue-router'
-import { errorMessages } from 'vue/compiler-sfc'
 
-// const { createItem } = useApi()
-const { getAutori, getCategorie, getLibro, updateLibro } = useLibri()
+
+const { getItems } = useApi()
 const error = ref(null)
 const success = ref(null)
 const route = useRoute()
 const loading = ref(false)
-
 
 const autori = ref([])
 const categ = ref([])
 
 const props = defineProps({
   idLibro: {
+    type: [Number, String],
+    default: null,
+  },
+  idAutore: {
     type: [Number, String],
     default: null,
   },
@@ -50,8 +51,8 @@ const autore = reactive({
 onMounted(async () => {
   try {
     const [autoriData, categData] = await Promise.all([
-      getAutori('/api/v1/autori/'),
-      getCategorie('/api/v1/categorie/'),
+      getItems('/api/v1/autori/'),
+      getItems('/api/v1/categorie/'),
     ])
     autori.value = autoriData
     categ.value = categData
@@ -61,11 +62,12 @@ onMounted(async () => {
   }
 
   // Fetch book data if editing
-  if (props.isEdit && props.idLibro) {
-    try {
-      let result = await getLibro(`/api/v1/libri/${props.idLibro}`)
 
-      // Populate form with existing data
+  try {
+    if (props.isEdit && props.idLibro) {
+      let result = await getItems(`/api/v1/libri/${props.idLibro}`)
+
+      // Populate form with existing data for Libro
       libro.titolo = result.titolo || ''
       libro.autore = result.autore || '' // it returns autore.id that in the select matches the full autore name
       libro.isbn = result.isbn || ''
@@ -74,107 +76,160 @@ onMounted(async () => {
       libro.disponibile = result.disponibile !== undefined ? result.disponibile : true
       libro.descrizione = result.descrizione || ''
       libro.cover_url = result.cover_url || ''
-    } catch (err) {
-      console.error('Error:', err.message)
+    } else if (props.isEdit && props.idAutore) {
+      let result = await getItems(`/api/v1/autori/${props.idAutore}`)
+      console.log({ resultAutore: result })
+      // Populate form with autore data
+      autore.nome = result.nome || ''
+      autore.cognome = result.cognome || ''
+      autore.data_nascita = result.data_nascita || ''
+      autore.biografia = result.biografia || ''
     }
+  } catch (err) {
+    console.error(`HTTP: ${err.message}`)
   }
 })
 
-
-
-const formValido = computed(() => libro.titolo.trim() !== '')
+const formLibroValido = computed(() => libro.titolo.trim() !== '')
+const formAutoreValido = computed(() => autore.cognome.trim() !== '')
 
 // const nomeCompleto = computed(() => autori.value.map((a) => a.nome + ' ' + a.cognome))
 
 const salva = async () => {
   try {
-    let data
+    // let data
 
-    if (props.isEdit && props.idLibro) {
-      // Update existing book
-      data = await updateLibro(`/api/v1/libri/${props.idLibro}`, libro)
-      emit('updated', data)
-      // success.value = `Libro "${libro.titolo}" aggiornato correttamente`
+    // // const url = props.idLibro
+    // const url =
+    //   route.path === `/inserisci-libro/${props.idLibro}`
+    //     ? `/api/v1/libri/${props.idLibro}`
+    //     : `/api/v1/autori/${props.idAutore}`
+
+    // const payload = route.path === `/inserisci-libro/${props.idLibro}` ? libro : autore
+
+    if (props.isEdit) {
+      // Update existing book or author
+      if (route.path === `/modifica-libro/${props.idLibro}`) {
+        // data = await updateLibro(url, payload)
+        emit('patchLibro', libro)
+      } else {
+        emit('patchAutore', autore)
+      }
     } else {
-      // Create new book
-      // result = await createItem(`/api/v1/autori/`, autore)
-      emit('saved', autore)
-      // success.value = `Libro "${libro.titolo}" salvato correttamente. Reindirizzamento...`
-
+      if (route.path === '/inserisci-libro') {
+        emit('creaLibro', libro)
+      } else {
+        emit('creaAutore', autore)
+      }
       // Reset form for new book (optional)
-      // if (!props.isEdit) {
-      //   Object.assign(libro, {
-      //     titolo: '',
-      //     autore: '',
-      //     isbn: '',
-      //     anno_pubblicazione: null,
-      //     categorie: [],
-      //     disponibile: true,
-      //     descrizione: '',
-      //     cover_url: '',
-      //   })
-      // }
-
-      // success.value = 'Item creato con successo.'
+      if (!props.isEdit) {
+        Object.assign(libro, {
+          titolo: '',
+          autore: '',
+          isbn: '',
+          anno_pubblicazione: null,
+          categorie: [],
+          disponibile: true,
+          descrizione: '',
+          cover_url: '',
+        })
+      }
     }
-    
   } catch (err) {
     console.log('Caught err', err.message)
     error.value = `Errore nel salvataggio del libro`
   }
 }
 
-const emit = defineEmits(['saved', 'updated'])
+const emit = defineEmits(['creaLibro', 'creaAutore', 'patchLibro', 'patchAutore'])
 </script>
 
 <template>
-  <form
-    v-if="route.path === '/inserisci-libro' || route.path === '/modifica-libro'"
-    @submit.prevent="salva"
-    class="form"
-  >
-    <LoadingSpinner v-if="loading" />
+  <div>
+    <form
+      v-if="route.path === '/inserisci-libro' || route.path === `/modifica-libro/${idLibro}`"
+      @submit.prevent="salva"
+      class="form"
+    >
+      <LoadingSpinner v-if="loading" />
+      <label for="titolo">Titolo</label>
+      <input id="titolo" type="text" v-model="libro.titolo" placeholder="titolo" required />
 
-    <input type="text" v-model="libro.titolo" placeholder="titolo" required />
+      <label for="autore">Seleziona l'autore</label>
+      <select id="autore" v-model="libro.autore">
+        <option disabled value="">Scegli autore...</option>
+        <option v-for="autore in autori" :key="autore.id" :value="autore.id">
+          {{ autore.cognome }} {{ autore.nome }}
+        </option>
+      </select>
 
-    <select v-model="libro.autore">
-      <option disabled value="">Scegli autore...</option>
-      <option v-for="autore in autori" :key="autore.id" :value="autore.id">
-        {{ autore.cognome }} {{ autore.nome }}
-      </option>
-    </select>
+      <label for="isbn">ISBN</label>
+      <input id="isbn" type="text" v-model="libro.isbn" placeholder="isbn" />
 
-    <input type="text" v-model="libro.isbn" placeholder="isbn" />
-    <input type="number" v-model="libro.anno_pubblicazione" placeholder="anno" />
+      <label for="data">Anno di pubblicazione</label>
+      <input id="data" type="number" v-model="libro.anno_pubblicazione" placeholder="anno" />
 
-    <select v-model="libro.categorie">
-      <option disabled value="">Seleziona categoria</option>
-      <option v-for="categoria in categ" :key="categoria.id" :value="categoria">
-        {{ categoria.nome }}
-      </option>
-    </select>
+      <label for="categoria">Seleziona il genere</label>
+      <select id="categoria" v-model="libro.categorie">
+        <option disabled value="">Seleziona categoria</option>
+        <option v-for="categoria in categ" :key="categoria.id" :value="categoria">
+          {{ categoria.nome }}
+        </option>
+      </select>
 
-    <label for="disponibile">Disponibile</label>
-    <input type="checkbox" v-model="libro.disponibile" id="disponibile" />
+      <label for="disponibile">Disponibile</label>
+      <input type="checkbox" v-model="libro.disponibile" id="disponibile" />
 
-    <input type="url" v-model="libro.cover_url" placeholder="Inserisci URL cover..." />
-    <textarea name="" id="" v-model="libro.descrizione"></textarea>
-    <button :disabled="!formValido || loading">{{ isEdit ? 'Aggiorna' : 'Salva' }}</button>
-    <p v-if="success" class="para success">{{ success }}</p>
-    <p v-else class="para error">{{ error }}</p>
-  </form>
+      <label for="url">URL cover</label>
+      <input id="url" type="url" v-model="libro.cover_url" placeholder="Inserisci URL cover..." />
 
-  <form v-else @submit.prevent="salva" class="form">
-    <label for="nome">Nome</label>
-    <input v-model="autore.nome" type="text" id="nome" autocomplete="name" placeholder="nome...">
-    <label for="cognome">Cognome</label>
-    <input v-model="autore.cognome" type="text" id="cognome" autocomplete="family-name" placeholder="nome...">
-    <label for="data-nascita">Data di nascita</label>
-    <input v-model="autore.data_nascita" type="date" id="data-nascita" autocomplete="bday-day" placeholder="data di nascita...">
-    <label for="biografia">Biografia</label>
-    <textarea v-model="autore.biografia" type="text" id="biografia" autocomplete="name" placeholder="biografia..." ></textarea>
-    <button>Salva</button>
-  </form>
+      <label for="descrizione">Descrizione</label>
+      <textarea
+        id="descrizione"
+        v-model="libro.descrizione"
+        placeholder="Il libro narra di..."
+      ></textarea>
+      <button :disabled="!formLibroValido || loading">{{ isEdit ? 'Aggiorna' : 'Salva' }}</button>
+      <p v-if="success" class="para success">{{ success }}</p>
+      <p v-else class="para error">{{ error }}</p>
+    </form>
+
+    <form v-else @submit.prevent="salva" class="form">
+      <label for="nome">Nome</label>
+      <input
+        v-model="autore.nome"
+        type="text"
+        id="nome"
+        autocomplete="name"
+        placeholder="nome..."
+      />
+      <label for="cognome">Cognome</label>
+      <input
+        v-model="autore.cognome"
+        type="text"
+        id="cognome"
+        autocomplete="family-name"
+        placeholder="nome..."
+      />
+      <label for="data-nascita">Data di nascita</label>
+      <input
+        v-model="autore.data_nascita"
+        type="date"
+        id="data-nascita"
+        autocomplete="bday-day"
+        placeholder="data di nascita..."
+      />
+      <label for="biografia">Biografia</label>
+      <textarea
+        v-model="autore.biografia"
+        type="text"
+        id="biografia"
+        autocomplete="name"
+        placeholder="biografia..."
+      ></textarea>
+      <button :disabled="!formAutoreValido || loading">{{ isEdit ? 'Aggiorna' : 'Salva' }}</button>
+    </form>
+  </div>
 </template>
 
 <style scoped>
@@ -230,6 +285,4 @@ button:disabled {
   scale: 0.95;
   cursor: not-allowed;
 }
-
-
 </style>

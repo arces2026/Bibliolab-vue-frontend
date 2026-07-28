@@ -17,6 +17,7 @@ const props = defineProps({
   preferito: Boolean // Custom prop
 })
 
+
 // Create a computed property for the cover URL
 const picture = computed(() => {
   if (props.picture?.trim()) {
@@ -39,7 +40,7 @@ const addPreferiti = () => emit('addPreferiti', props.id)
   <div class="container">
     <section class="cover">
       <span v-if="preferito" class="stella">⭐</span>
-      <RouterLink class="link-to-dettaglio" :to="{ name: props.detailLink, params: { id: item.id } }">
+      <RouterLink v-if="item.id" class="link-to-dettaglio" :to="{ name: props.detailLink, params: { id: item.id } }">
         <img :src="picture" :alt="`${item.nome} ${item.cognome}`" class="image" />
       </RouterLink>
       <span v-if='item.isbn' class="isbn">isbn: {{ item.isbn }} </span>

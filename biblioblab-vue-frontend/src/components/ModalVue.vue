@@ -1,8 +1,8 @@
 <script setup>
 const props = defineProps({
-  success: String,
   button1: String,
   button2: String,
+  confirmMessage: String
 })
 
 const emit = defineEmits(['exit', 'next', 'modalOff'])
@@ -15,7 +15,7 @@ const modalOff = () => emit('modalOff')
 <template>
   <div @click.stop="modalOff" class="overlay">
     <div @click.stop class="container">
-      <p class="para success">{{ props.success }}</p>
+      <p class="para confirm">{{ props.confirmMessage }}</p>
       <p class="para error">{{ props.message }}</p>
       <button class="btn next" @click="next">{{ props.button1 }}</button>
       <button class="btn exit" @click="exit">{{ props.button2 }}</button>
@@ -56,7 +56,7 @@ const modalOff = () => emit('modalOff')
   gap: 16px;
 }
 
-.para.success {
+.para.confirm {
   grid-column: span 2 / span 2;
   display: flex;
   justify-content: center;
@@ -76,7 +76,7 @@ const modalOff = () => emit('modalOff')
   text-align: center;
 }
 
-.para.success {
+.para.confirm {
   color: green;
 }
 

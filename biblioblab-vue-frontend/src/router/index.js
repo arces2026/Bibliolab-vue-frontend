@@ -5,8 +5,8 @@ const routes = [
   {
     path: '/about',
     name: 'about',
-    component: () => import ('@/views/AboutView.vue'),
-    meta: { titoloPagina: 'About'}
+    component: () => import('@/views/AboutView.vue'),
+    meta: { titoloPagina: 'About' },
   },
   {
     path: `/libri/:id`,
@@ -36,19 +36,25 @@ const routes = [
     path: '/autori',
     name: 'autori',
     component: () => import('@/views/AutoriView.vue'),
-    meta: { titoloPagina: 'Autori'}
+    meta: { titoloPagina: 'Autori' },
   },
   {
     path: '/inserisci-autore',
     name: 'inserisci-autore',
     component: () => import('@/views/InserisciAutoreView.vue'),
-    meta: { titoloPagina: 'Inserisci Autore'}
+    meta: { titoloPagina: 'Inserisci Autore' },
   },
   {
     path: '/autori/:id',
     name: 'autore',
     component: () => import('@/views/DettaglioAutoreView.vue'),
-    meta: { titoloPagina: 'Autore'}
+    meta: { titoloPagina: 'Autore' },
+  },
+  {
+    path: '/modifica-autore/:id',
+    name: 'modifica-autore',
+    component: () => import('@/views/ModificaAutoreView.vue'),
+    meta: { titoloPagina: 'Modifica autore' },
   },
   {
     path: '/login',

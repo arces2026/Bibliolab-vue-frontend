@@ -1,16 +1,16 @@
 <script setup>
 import CardVue from '@/components/CardVue.vue'
-import { useLibri } from '@/composable/useLibri'
 import { useEliminaItem } from '@/composable/useEliminaItem'
 import { usePreferiti } from '@/composable/usePreferiti.js'
+import { useApi } from '@/composable/useApi.js'
 import { onMounted, ref } from 'vue'
 import ModalVue from './ModalVue.vue'
 import LoadingSpinner from './LoadingSpinner.vue'
 
-const { getAutori } = useLibri()
+
+const { getItems } = useApi()
 const autori = ref([])
 const loading = ref(false)
-const success = ref('Sicuro di voler eliminare l\'autore?')
 
 // Use the preferiti composable
 const { arrayPreferiti, togglePreferito } = usePreferiti()
@@ -22,6 +22,7 @@ const {
   button2Text,
   loading: deleteLoading,
   removeConfirmation,
+  confirmMessage,
   onConferma,
   onAnnulla,
   isDeleting,
@@ -32,7 +33,8 @@ const {
 
 onMounted(async () => {
   try {
-    autori.value = await getAutori('/api/v1/autori/')
+    autori.value = await getItems('/api/v1/autori/')
+    // autori.value = await getAutori('/api/v1/autori/')
     console.log({ autori: autori.value })
   } catch (err) {
     console.error('Errore recuperando gli autori', err.message)
@@ -49,7 +51,7 @@ onMounted(async () => {
     @modal-off="showModal = false"
     :button1="button1Text"
     :button2="button2Text"
-    :success="success"
+    :confirm-message="confirmMessage"
     class="modal"
   />
   <TransitionGroup name="card" tag="div" class="parent">

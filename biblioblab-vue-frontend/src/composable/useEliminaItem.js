@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
 
+
 export function useEliminaItem(items, options = {}) {
   const { getCsrf } = useAuthStore()
   const showModal = ref(false)
@@ -9,6 +10,7 @@ export function useEliminaItem(items, options = {}) {
   const itemDaRimuovere = ref(null)
   const loading = ref(false)
   const deletingIds = ref(new Set())
+  const confirmMessage = ref(null)
 
   // Check if items is a ref
   const isRef = items && typeof items === 'object' && 'value' in items
@@ -35,15 +37,20 @@ export function useEliminaItem(items, options = {}) {
         )
       return { success: true, status: res.status }
     } catch (err) {
-      console.error('Errore catturato eliminando il libro ', itemName, err.message)
+      console.error('Errore eliminando l\'item ', itemName, err.message)
       throw err
     }
   }
 
   const removeConfirmation = (id) => {
+    if (!id) {
+      console.error('Missing ID for deletion')
+      return
+    }
     itemDaRimuovere.value = id
     console.log({ itemDaRimuovere: itemDaRimuovere.value })
     showModal.value = true
+    confirmMessage.value = `Sicuro di voler eliminare l'item con ID ${id}`
   }
 
   const onConferma = async () => {
@@ -55,7 +62,7 @@ export function useEliminaItem(items, options = {}) {
     try {
       const result = await eliminaItem(`${baseUrl}${id}`)
       showModal.value = false
-      console.log('Libro eliminato con successo', result)
+      console.log('Item eliminato con successo', result)
 
       //Start deleting animation
       deletingIds.value.add(id)
@@ -96,6 +103,7 @@ export function useEliminaItem(items, options = {}) {
     button2Text,
     loading,
     deletingIds,
+    confirmMessage,
     removeConfirmation,
     onConferma,
     onAnnulla,
