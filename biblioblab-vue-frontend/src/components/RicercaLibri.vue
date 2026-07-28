@@ -27,6 +27,7 @@ const {
   showModal,
   button1Text,
   button2Text,
+  confirmMessage,
   loading: deleteLoading,
   removeConfirmation,
   onConferma,
@@ -111,7 +112,7 @@ const libriFiltrati = computed(() => {
     @modal-off="showModal = false"
     :button1="button1Text"
     :button2="button2Text"
-    :success="success"
+    :confirm-message="confirmMessage"
     class="modal"
   />
 

@@ -1,12 +1,10 @@
 <script setup>
 import { computed, reactive, ref, onMounted } from 'vue'
-import { useLibri } from '@/composable/useLibri'
 import { useApi } from '@/composable/useApi.js'
 import LoadingSpinner from './LoadingSpinner.vue'
 import { useRoute } from 'vue-router'
 
-// const { createItem } = useApi()
-const { getLibro, updateLibro } = useLibri()
+
 const { getItems } = useApi()
 const error = ref(null)
 const success = ref(null)
@@ -67,7 +65,7 @@ onMounted(async () => {
 
   try {
     if (props.isEdit && props.idLibro) {
-      let result = await getLibro(`/api/v1/libri/${props.idLibro}`)
+      let result = await getItems(`/api/v1/libri/${props.idLibro}`)
 
       // Populate form with existing data for Libro
       libro.titolo = result.titolo || ''
