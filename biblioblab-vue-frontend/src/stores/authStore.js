@@ -117,6 +117,7 @@ export const useAuthStore = defineStore('auth', () => {
       utente.value = userData
       isAuthenticated.value = true
       // console.log('✅ User session restored:', userData)
+      console.log({userData: userData})
       return userData
     } catch (err) {
       console.error('❌ Errore caricando utente:', err)

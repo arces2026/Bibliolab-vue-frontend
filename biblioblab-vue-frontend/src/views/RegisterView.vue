@@ -12,16 +12,16 @@ const password2 = ref('')
 const nome = ref('')
 const cognome = ref('')
 const email = ref('')
-
+// const avatar_url = ref('')
 
 onMounted(() => {
   authStore.success = null
   authStore.error = null
 })
 
-const onSubmit = async() => {
-    // Frontend validation
-  if (password.value !== password2.value){
+const onSubmit = async () => {
+  // Frontend validation
+  if (password.value !== password2.value) {
     authStore.error = 'Le passwords non coincidono'
     return
   }
@@ -34,10 +34,13 @@ const onSubmit = async() => {
     nome: nome.value,
     cognome: cognome.value,
     email: email.value,
+    // To get the same avatar for the same username from testingBot
+    // The 'u' parameter is what testingBot uses for unique identifier
+    avatar_url: `https://testingbot.com/free-online-tools/random-avatar/200?u=${username.value}`
+    // avatar_url: avatar_url.value,
   }
   // Log the data being submitted
   console.log('📤 Submitting form data:', userData) // or whatever your form data variable is
-
 
   await authStore.register(userData)
   if (authStore.success) router.push('/ricerca')
@@ -65,6 +68,8 @@ const onSubmit = async() => {
       id="email"
       v-model="email"
     />
+    <!-- <label for="avatar">Avatar url</label>
+    <input type="text" id="avatar" placeholder="avatar url..." v-model="avatar_url"> -->
     <label for="username">Username</label>
     <input
       autocomplete="username"

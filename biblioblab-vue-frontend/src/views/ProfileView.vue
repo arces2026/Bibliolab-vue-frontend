@@ -17,6 +17,8 @@ const formattedDate = ref(null)
 onMounted(async () => {
   utente.value = await caricaUtente()
 
+  console.log({utente: utente.value})
+
   const preferitiString = localStorage.getItem('preferiti')
   arrayPreferiti.value = preferitiString ? JSON.parse(preferitiString) : []
 
@@ -44,6 +46,9 @@ onMounted(async () => {
 <template>
   <h1>Profile</h1>
   <div class="container">
+    <div class="avatar">
+      <img :src="utente.avatar_url" :alt="utente.cognome">
+    </div>
     <div class="utente">
       <p>Utente: {{ utente.nome }} {{ utente.cognome }}</p>
       <p>Admin: {{ utente.is_superuser ? 'Sì' : 'No' }}</p>
@@ -74,6 +79,11 @@ h1 {
   padding: 40px;
   display: flex;
   justify-content: space-evenly;
+}
+
+img {
+  border-radius: 50%;
+  border: 3px solid rgb(225, 225, 236);
 }
 
 p {
