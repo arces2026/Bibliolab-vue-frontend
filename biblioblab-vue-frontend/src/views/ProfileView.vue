@@ -13,11 +13,20 @@ const libri = ref([])
 const libriPreferiti = ref([])
 const date = ref(null)
 const formattedDate = ref(null)
+const parsedAvatar = ref(null)
 
 onMounted(async () => {
   utente.value = await caricaUtente()
 
-  console.log({utente: utente.value})
+  // Check for avatar_url in utente
+  if (!utente.value.avatar_url) {
+    const savedAvatar = localStorage.getItem('avatar_url')
+    if (savedAvatar) {
+      utente.value.avatar_url = savedAvatar
+    }
+  }
+
+  console.log({ utente: utente.value })
 
   const preferitiString = localStorage.getItem('preferiti')
   arrayPreferiti.value = preferitiString ? JSON.parse(preferitiString) : []
@@ -28,8 +37,8 @@ onMounted(async () => {
   libriPreferiti.value = libri.value.filter((libro) => arrayPreferiti.value.includes(libro.id))
   console.log({ libriPreferiti: libriPreferiti.value })
 
-  if (!utente.value.iscritto_dal) return 
-  
+  if (!utente.value.iscritto_dal) return
+
   date.value = new Date(utente.value.iscritto_dal)
   console.log({ date: date.value })
 
@@ -39,7 +48,6 @@ onMounted(async () => {
     day: 'numeric',
   }
   formattedDate.value = date.value.toLocaleDateString('it-IT', options)
-
 })
 </script>
 
@@ -47,7 +55,7 @@ onMounted(async () => {
   <h1>Profile</h1>
   <div class="container">
     <div class="avatar">
-      <img :src="utente.avatar_url" :alt="utente.cognome">
+      <img :src="utente.avatar_url" :alt="utente.cognome" />
     </div>
     <div class="utente">
       <p>Utente: {{ utente.nome }} {{ utente.cognome }}</p>

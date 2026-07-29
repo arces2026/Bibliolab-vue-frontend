@@ -1,71 +1,97 @@
+diff --git a/biblioblab-vue-frontend/src/stores/authStore.js b/biblioblab-vue-frontend/src/stores/authStore.js
+index 4cb882d..927376b 100644
+--- a/biblioblab-vue-frontend/src/stores/authStore.js
++++ b/biblioblab-vue-frontend/src/stores/authStore.js
+@@ -117,6 +117,7 @@ export const useAuthStore = defineStore('auth', () => {
+       utente.value = userData
+       isAuthenticated.value = true
+       // console.log('✅ User session restored:', userData)
++      console.log({userData: userData})
+       return userData
+     } catch (err) {
+       console.error('❌ Errore caricando utente:', err)
 diff --git a/biblioblab-vue-frontend/src/views/ProfileView.vue b/biblioblab-vue-frontend/src/views/ProfileView.vue
-index 3b73649..f05cf37 100644
+index 040b777..90af855 100644
 --- a/biblioblab-vue-frontend/src/views/ProfileView.vue
 +++ b/biblioblab-vue-frontend/src/views/ProfileView.vue
-@@ -1,17 +1,32 @@
- <script setup>
- import { useAuthStore } from '@/stores/authStore'
--import { onMounted } from 'vue'
-+import { onMounted, ref } from 'vue'
-+import { useApi } from '@/composable/useApi'
-+import { RouterLink } from 'vue-router'
- 
- // Utente is a ref from the authStore so we can use it directly in the template
--const { caricaUtente, utente } = useAuthStore()
-+const { caricaUtente } = useAuthStore()
-+const { getItems } = useApi()
-+const utente = ref({})
-+const arrayPreferiti = ref([])
-+const libri = ref([])
-+const libriPreferiti = ref([])
- 
- 
+@@ -17,6 +17,8 @@ const formattedDate = ref(null)
  onMounted(async () => {
--  const user = await caricaUtente()
--  console.log({ user: user })
-+  utente.value = await caricaUtente()
-+ 
-+  const preferitiString = localStorage.getItem('preferiti')
-+  arrayPreferiti.value = preferitiString ? JSON.parse(preferitiString) : []
-+
-+  libri.value = await getItems('/api/v1/libri/')
-+  console.log({libri: libri.value})
-+
-+  libriPreferiti.value = libri.value.filter(libro => arrayPreferiti.value.includes(libro.id))
-+  console.log({libriPreferiti : libriPreferiti.value})
- })
+   utente.value = await caricaUtente()
  
--const date = new Date(utente.iscritto_dal)
-+const date = new Date(utente.value.iscritto_dal)
- console.log({date: date})
++  console.log({utente: utente.value})
++
+   const preferitiString = localStorage.getItem('preferiti')
+   arrayPreferiti.value = preferitiString ? JSON.parse(preferitiString) : []
  
- const options = {
-@@ -25,12 +40,19 @@ const formattedDate = date.toLocaleDateString('it-IT', options)
+@@ -44,6 +46,9 @@ onMounted(async () => {
  <template>
    <h1>Profile</h1>
    <div class="container">
-+    <div class="utente">
-     <p>Utente: {{ utente.nome }} {{ utente.cognome }}</p>
-     <p>Admin: {{ utente.is_superuser ? 'Sì' : 'No' }}</p>
-     <p>Staff: {{ utente.is_staff ? 'Sì' : 'No' }}</p>
-     <p>Email: {{ utente.email }}</p>
-     <p>Username: {{ utente.username }}</p>
-     <p>Iscritto dal: {{ formattedDate }}</p>
++    <div class="avatar">
++      <img :src="utente.avatar_url" :alt="utente.cognome">
 +    </div>
-+    <div class="preferiti">
-+      <ul>Libri preferiti
-+        <li v-for="libro in libriPreferiti" :key="libro.id"><RouterLink :to="{name : 'libro', params: {id : libro.id}}">{{ libro.titolo }}</RouterLink></li>
-+      </ul>
-+    </div>
-   </div>
- </template>
- 
-@@ -41,6 +63,8 @@ h1 {
- 
- .container {
-   padding: 40px;
-+  display: flex;
-+  justify-content: space-evenly;
+     <div class="utente">
+       <p>Utente: {{ utente.nome }} {{ utente.cognome }}</p>
+       <p>Admin: {{ utente.is_superuser ? 'Sì' : 'No' }}</p>
+@@ -76,6 +81,11 @@ h1 {
+   justify-content: space-evenly;
  }
  
++img {
++  border-radius: 50%;
++  border: 3px solid rgb(225, 225, 236);
++}
++
  p {
+   margin-bottom: 20px;
+   font-size: 1.2rem;
+diff --git a/biblioblab-vue-frontend/src/views/RegisterView.vue b/biblioblab-vue-frontend/src/views/RegisterView.vue
+index 5862f5b..74fa202 100644
+--- a/biblioblab-vue-frontend/src/views/RegisterView.vue
++++ b/biblioblab-vue-frontend/src/views/RegisterView.vue
+@@ -12,16 +12,16 @@ const password2 = ref('')
+ const nome = ref('')
+ const cognome = ref('')
+ const email = ref('')
+-
++// const avatar_url = ref('')
+ 
+ onMounted(() => {
+   authStore.success = null
+   authStore.error = null
+ })
+ 
+-const onSubmit = async() => {
+-    // Frontend validation
+-  if (password.value !== password2.value){
++const onSubmit = async () => {
++  // Frontend validation
++  if (password.value !== password2.value) {
+     authStore.error = 'Le passwords non coincidono'
+     return
+   }
+@@ -34,11 +34,14 @@ const onSubmit = async() => {
+     nome: nome.value,
+     cognome: cognome.value,
+     email: email.value,
++    // To get the same avatar for the same username from testingBot
++    // The 'u' parameter is what testingBot uses for unique identifier
++    avatar_url: `https://testingbot.com/free-online-tools/random-avatar/200?u=${username.value}`
++    // avatar_url: avatar_url.value,
+   }
+   // Log the data being submitted
+   console.log('📤 Submitting form data:', userData) // or whatever your form data variable is
+ 
+-
+   await authStore.register(userData)
+   if (authStore.success) router.push('/ricerca')
+ }
+@@ -65,6 +68,8 @@ const onSubmit = async() => {
+       id="email"
+       v-model="email"
+     />
++    <!-- <label for="avatar">Avatar url</label>
++    <input type="text" id="avatar" placeholder="avatar url..." v-model="avatar_url"> -->
+     <label for="username">Username</label>
+     <input
+       autocomplete="username"

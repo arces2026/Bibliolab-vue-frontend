@@ -43,7 +43,11 @@ const onSubmit = async () => {
   console.log('📤 Submitting form data:', userData) // or whatever your form data variable is
 
   await authStore.register(userData)
-  if (authStore.success) router.push('/ricerca')
+  if (authStore.success) {
+    // Save the avatar 
+    localStorage.setItem('avatar_url', userData.avatar_url) 
+    router.push('/ricerca')
+  }
 }
 </script>
 
